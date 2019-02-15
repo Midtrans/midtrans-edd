@@ -1,6 +1,7 @@
-Midtrans Easy Digital Downloads Payment Gateway
+Midtrans&nbsp; Easy Digital Downloads - Wordpress Payment Gateway Module
 =====================================
 
+Midtrans&nbsp; :heart: EDD!
 A WordPress plugin that let your Easy-Digital-Downloads store integrated with Midtrans payment gateway.
 
 ### Description
@@ -49,8 +50,10 @@ In order to configure Midtrans plug-in:
 4. Click **Payment Gateways** section, that you click before i.e. **Midtrans** next to **General**
 5. Input required fields below. (alternatively you may refer to image below) 
   * **Checkout Label** : \<text that will be shown when customers pick payment options\>
-  * **Production API Key**: \<your production server key\> (leave blank if you dont have production account)
-  * **Sandbox API Key**: \<your sandbox server key\>
+  * **Production Server Key**: \<your production server key\> (leave blank if you dont have production account)
+  * **Production Client Key**: \<your production client key\> (leave blank if you dont have production account)
+  * **Sandbox Server Key**: \<your sandbox server key\>  	
+  * **Sandbox Client Key**: \<your sandbox client key\>
   * **Enable 3D Secure** : yes
 6. Click **Save Changes**.
 

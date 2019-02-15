@@ -3,10 +3,10 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 1.0
-Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya
+Version: 2.0.0
+Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
 Author URI: 
-Contributors: wendy0402, rizdaprasetya
+Contributors: wendy0402, rizdaprasetya, aalexanderkevin
 
 */
 //exit if opened directly
@@ -265,17 +265,29 @@ function midtrans_add_settings($settings) {
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_production_api_key',
+			'id' => 'mt_production_server_key',
 			'name' => __('Production Server Key', 'midtrans'),
-			'desc' => sprintf(__('<br>Input your <b>Production</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$production_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$production_key_url),
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_sandbox_api_key',
+			'id' => 'mt_production_client_key',
+			'name' => __('Production Client Key', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$production_key_url),
+			'type' => 'text',
+		),		
+		array(
+			'id' => 'mt_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'midtrans'),
-			'desc' => sprintf(__('<br>Input your <b>Sandbox</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
 			'type' => 'text',
 		),
+		array(
+			'id' => 'mt_sandbox_client_key',
+			'name' => __('Sandbox Client Key', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'type' => 'text',
+		),		
 		array(
 			'id' => 'mt_3ds',
 			'name' => __('Enable 3D Secure', 'midtrans'),
@@ -289,9 +301,15 @@ function midtrans_add_settings($settings) {
 			'type' => 'checkbox',
 		),
 		array(
+			'id' => 'mt_enable_redirect',
+			'name' => __('Enable Payment Page Redirection', 'midtrans'),
+			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>'),
+			'type' => 'checkbox',	
+		),	
+		array(
 			'id' => 'mt_enabled_payment',
 			'name' => __('Allowed Payment Method', 'midtrans'),
-			'desc' => __('<br>Customize allowed payment method, separate payment method code with coma. e.g: bank_transfer,credit_card.<br>Leave it default if you are not sure.'),
+			'desc' => __('<br>Customize allowed payment method, separate payment method code with coma. e.g: bank_transfer,credit_card.<br> <b>Leave it default if you are not sure</b>'),
 			'type' => 'text',
 		),					
 		array(
@@ -332,17 +350,29 @@ function midtrans_installment_add_settings($settings) {
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_installment_production_api_key',
+			'id' => 'mt_installment_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_installment'),
-			'desc' => sprintf(__('<br>Input your <b>Production</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$production_key_url),
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_installment_sandbox_api_key',
+			'id' => 'mt_installment_production_client_key',
+			'name' => __('Production Client Key', 'midtrans_installment'),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$production_key_url),
+			'type' => 'text',
+		),		
+		array(
+			'id' => 'mt_installment_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'midtrans_installment'),
-			'desc' => sprintf(__('<br>Input your <b>Sandbox</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$sandbox_key_url),
 			'type' => 'text',
 		),
+		array(
+			'id' => 'mt_installment_sandbox_client_key',
+			'name' => __('Sandbox Client Key', 'midtrans_installment'),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$sandbox_key_url),
+			'type' => 'text',
+		),		
 		array(
 			'id' => 'mt_installment_min_amount',
 			'name' => __('Minimal Transaction Amount', 'midtrans_installment'),
@@ -351,16 +381,22 @@ function midtrans_installment_add_settings($settings) {
 		),	
 		array(
 			'id' => 'mt_installment_3ds',
-			'name' => __('Enable 3D Secure', 'midtrans_promo'),
+			'name' => __('Enable 3D Secure', 'midtrans_installment'),
 			'desc' => __('You must enable 3D Secure. Please contact us if you wish to disable this feature in the Production environment.'),
 			'type' => 'checkbox',
 		),
 		array(
 			'id' => 'mt_installment_save_card',
-			'name' => __('Enable Save Card', 'midtrans_promo'),
+			'name' => __('Enable Save Card', 'midtrans_installment'),
 			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase'),
 			'type' => 'checkbox',
-		),		
+		),	
+		array(
+			'id' => 'mt_installment_enable_redirect',
+			'name' => __('Enable Payment Page Redirection', 'midtrans_installment'),
+			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>'),
+			'type' => 'checkbox',	
+		),				
 		array(
 			'id' => 'mt_installment_custom_field',
 			'name' => __('Custom fields', 'midtrans_installment'),
@@ -392,17 +428,29 @@ function midtrans_offinstallment_add_settings($settings) {
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_offinstallment_production_api_key',
+			'id' => 'mt_offinstallment_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_offinstallment'),
-			'desc' => sprintf(__('<br>Input your <b>Production</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$production_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$production_key_url),
 			'type' => 'text',
 		),
 		array(
-			'id' => 'mt_offinstallment_sandbox_api_key',
+			'id' => 'mt_offinstallment_production_client_key',
+			'name' => __('Production Client Key', 'midtrans_offinstallment'),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$production_key_url),
+			'type' => 'text',
+		),		
+		array(
+			'id' => 'mt_offinstallment_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'midtrans_offinstallment'),
-			'desc' => sprintf(__('<br>Input your <b>Sandbox</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$sandbox_key_url),
 			'type' => 'text',
 		),
+		array(
+			'id' => 'mt_offinstallment_sandbox_client_key',
+			'name' => __('Sandbox Client Key', 'midtrans_offinstallment'),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_offinstallment' ),$sandbox_key_url),
+			'type' => 'text',
+		),		
 		array(
 			'id' => 'mt_offinstallment_min_amount',
 			'name' => __('Minimal Transaction Amount', 'midtrans_offinstallment'),
@@ -417,15 +465,21 @@ function midtrans_offinstallment_add_settings($settings) {
 		),			
 		array(
 			'id' => 'mt_offinstallment_3ds',
-			'name' => __('Enable 3D Secure', 'midtrans_promo'),
+			'name' => __('Enable 3D Secure', 'midtrans_offinstallment'),
 			'desc' => __('You must enable 3D Secure. Please contact us if you wish to disable this feature in the Production environment.'),
 			'type' => 'checkbox',
 		),
 		array(
 			'id' => 'mt_offinstallment_save_card',
-			'name' => __('Enable Save Card', 'midtrans_promo'),
+			'name' => __('Enable Save Card', 'midtrans_offinstallment'),
 			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase'),
 			'type' => 'checkbox',
+		),		
+		array(
+			'id' => 'mt_offinstallment_enable_redirect',
+			'name' => __('Enable Payment Page Redirection', 'midtrans_offinstallment'),
+			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>'),
+			'type' => 'checkbox',	
 		),		
 		array(
 			'id' => 'mt_offinstallment_custom_field',
@@ -460,15 +514,27 @@ function midtrans_promo_add_settings($settings) {
 		array(
 			'id' => 'mt_promo_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_promo'),
-			'desc' => sprintf(__('<br>Input your <b>Production</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$production_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$production_key_url),
 			'type' => 'text',
 		),
 		array(
+			'id' => 'mt_promo_production_client_key',
+			'name' => __('Production Client Key', 'midtrans_promo'),
+			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$production_key_url),
+			'type' => 'text',
+		),		
+		array(
 			'id' => 'mt_promo_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'midtrans_promo'),
-			'desc' => sprintf(__('<br>Input your <b>Sandbox</b> Midtrans Server Key. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$sandbox_key_url),
 			'type' => 'text',
-		),				
+		),
+		array(
+			'id' => 'mt_promo_sandbox_client_key',
+			'name' => __('Sandbox Client Key', 'midtrans_promo'),
+			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_promo' ),$sandbox_key_url),
+			'type' => 'text',
+		),						
 		array(
 			'id' => 'mt_promo_enabled_payment',
 			'name' => __('Allowed Payment Method for Promo', 'midtrans_promo'),
@@ -480,19 +546,25 @@ function midtrans_promo_add_settings($settings) {
 			'name' => __('Allowed CC BINs', 'midtrans_promo'),
 			'desc' => __('<br>Fill with CC BIN numbers (or bank name) that you want to allow to use this payment button. </br>Separate BIN number with coma Example: 4,5,4811,bni,mandiri'),
 			'type' => 'text',
-		),		
-		array(
-			'id' => 'mt_promo_save_card',
-			'name' => __('Enable Save Card', 'midtrans_promo'),
-			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase'),
-			'type' => 'checkbox',
-		),
+		),	
 		array(
 			'id' => 'mt_promo_3ds',
 			'name' => __('Enable 3D Secure', 'midtrans_promo'),
 			'desc' => __('You must enable 3D Secure. Please contact us if you wish to disable this feature in the Production environment.'),
 			'type' => 'checkbox',
+		),			
+		array(
+			'id' => 'mt_promo_save_card',
+			'name' => __('Enable Save Card', 'midtrans_promo'),
+			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase'),
+			'type' => 'checkbox',
 		),	
+		array(
+			'id' => 'mt_promo_enable_redirect',
+			'name' => __('Enable Payment Page Redirection', 'midtrans_promo'),
+			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>'),
+			'type' => 'checkbox',	
+		),			
 		array(
 			'id' => 'mt_promo_code',
 			'name' => __('Promo Code', 'midtrans_promo'),
@@ -566,11 +638,15 @@ function edd_midtrans_payment($purchase_data) {
 	if(edd_is_test_mode()) {
 		// set test credentials here
 		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
+		$client_key = $edd_options['mt_sandbox_client_key'];
+		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
 	} else {
 		// set live credentials here
 		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_production_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
+		$client_key = $edd_options['mt_production_client_key'];
+		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
 	}
  
 	// check for any stored errors
@@ -660,39 +736,79 @@ function edd_midtrans_payment($purchase_data) {
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
           $mt_params['custom_field3'] = !empty($custom_fields_params[2]) ? $custom_fields_params[2] : null;
         }
-error_log('midtrans'.print_r($mt_params,true));                
-		// error_log('mt_3ds '.$edd_options['mt_3ds']); //debugan
+		error_log('midtrans'.print_r($mt_params,true));                
    		// get rid of cart contents
 		edd_empty_cart();
-		// Redirect to veritrans
-		$snapToken = Veritrans_Snap::getSnapToken($mt_params);	
-		// error_log('mt_params: '.print_r($mt_params,true)); //debugan
-		wp_redirect( Veritrans_Snap::getRedirectUrl($mt_params) );
+		// Snap Request Process
+			try{          
+				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapRedirectUrl = $snapResponse->redirect_url;
+				$snapToken = $snapResponse->token;
+			}
+			catch(Exception $e) {
+  				echo 'Error: ' .$e->getMessage();
+  				exit;
+			}
+		get_header();
 
-		exit;
-	} else {
-		$fail = true; // errors were detected
+		if ($edd_options["mt_enable_redirect"]){
+			wp_redirect($snapRedirectUrl);
+		}
+		else{
+		try{
+		?>		
+        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
+        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
+        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
+	    	<button id="pay-button">Proceed to Payment</button> </center>
+        	<script type="text/javascript">
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+        		var retryCount = 0;
+        		var snapExecuted = false;
+        		var intervalFunction = 0;
+      			document.getElementById('pay-button').onclick = function(){
+      				popup();
+      			}	
+      			popup();
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+      		function popup(){
+        		intervalFunction = setInterval(function() {
+        			try{
+            			snap.pay('<?=$snapToken?>');
+            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
+          			}
+          			catch (e){ 
+            			retryCount++;
+            			if(retryCount >= 10){
+              				location.reload(); 
+              				return;
+            			}
+          				console.log(e);
+          				console.log("Snap not ready yet... Retrying in 1000ms!");
+          			}
+
+          			finally {
+            			if (snapExecuted) {
+              				clearInterval(intervalFunction);
+            			}
+          			}
+        		}, 1000);
+        	}
+        	</script>        
+			<?php          
+      	}
+      	catch (Exception $e) {
+        error_log($e->getMessage());
+      	}
+      	} 
+		get_footer();
 	}
- 
-	if( $fail !== false ) {
+	else {
+		$fail = true;
 		// if errors are present, send the user back to the purchase page so they can be corrected
 		edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
 	}
 }
-
-// $merchant_payment_confirmed = true;		
- 
-// if($merchant_payment_confirmed) { // this is used when processing credit cards on site
- 
-// 	// // once a transaction is successful, set the purchase to complete
-//	// edd_update_payment_status($payment, 'complete');
- 
-// 	// // go to the success page			
-// edd_send_to_success_page();
- 
-// } else {
-// 	$fail = true; // payment wasn't recorded
-// }
 add_action('edd_gateway_midtrans', 'edd_midtrans_payment');
 
 // installment procces
@@ -705,11 +821,15 @@ function edd_midtrans_installment_payment($purchase_data) {
 	if(edd_is_test_mode()) {
 		// set test credentials here
 		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_installment_sandbox_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_installment_sandbox_server_key'];
+		$client_key = $edd_options['mt_installment_sandbox_client_key'];
+		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
 	} else {
 		// set live credentials here
 		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_installment_production_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_installment_production_server_key'];
+		$client_key = $edd_options['mt_installment_production_client_key'];
+		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
 	}
  
 	// check for any stored errors
@@ -804,16 +924,72 @@ function edd_midtrans_installment_payment($purchase_data) {
         }                       
    		// get rid of cart contents
 		edd_empty_cart();
-		// Redirect to veritrans
-		$snapToken = Veritrans_Snap::getSnapToken($mt_params);	
-		// error_log('mt_params: '.print_r($mt_params,true)); //debugan
-		wp_redirect( Veritrans_Snap::getRedirectUrl($mt_params) );
-		exit;
-	} else {
-		$fail = true; // errors were detected
+		// Snap Request Process
+			try{          
+				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapRedirectUrl = $snapResponse->redirect_url;
+				$snapToken = $snapResponse->token;
+			}
+			catch(Exception $e) {
+  				echo 'Error: ' .$e->getMessage();
+  				exit;
+			}
+		get_header();
+
+		if ($edd_options["mt_installment_enable_redirect"]){
+			wp_redirect($snapRedirectUrl);
+		}
+		else{
+		try{
+		?>		
+        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
+        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
+        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
+	    	<button id="pay-button">Proceed to Payment</button> </center>
+        	<script type="text/javascript">
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+        		var retryCount = 0;
+        		var snapExecuted = false;
+        		var intervalFunction = 0;
+      			document.getElementById('pay-button').onclick = function(){
+      				popup();
+      			}	
+      			popup();
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+      		function popup(){
+        		intervalFunction = setInterval(function() {
+        			try{
+            			snap.pay('<?=$snapToken?>');
+            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
+          			}
+          			catch (e){ 
+            			retryCount++;
+            			if(retryCount >= 10){
+              				location.reload(); 
+              				return;
+            			}
+          				console.log(e);
+          				console.log("Snap not ready yet... Retrying in 1000ms!");
+          			}
+
+          			finally {
+            			if (snapExecuted) {
+              				clearInterval(intervalFunction);
+            			}
+          			}
+        		}, 1000);
+        	}
+        	</script>        
+			<?php          
+      	}
+      	catch (Exception $e) {
+        error_log($e->getMessage());
+      	}
+      	} 
+		get_footer();
 	}
- 
-	if( $fail !== false ) {
+	else {
+		$fail = true;
 		// if errors are present, send the user back to the purchase page so they can be corrected
 		edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
 	}
@@ -830,11 +1006,15 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
 	if(edd_is_test_mode()) {
 		// set test credentials here
 		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_sandbox_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_sandbox_server_key'];
+		$client_key = $edd_options['mt_offinstallment_sandbox_client_key'];
+		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
 	} else {
 		// set live credentials here
 		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_production_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_production_server_key'];
+		$client_key = $edd_options['mt_offinstallment_production_client_key'];
+		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
 	}
  
 	// check for any stored errors
@@ -928,15 +1108,72 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
         }                       
    		// get rid of cart contents
 		edd_empty_cart();
-		// Redirect to veritrans
-		$snapToken = Veritrans_Snap::getSnapToken($mt_params);	
-		// error_log('mt_params: '.print_r($mt_params,true)); //debugan
-		wp_redirect( Veritrans_Snap::getRedirectUrl($mt_params) );
-		exit;
-	} else {
-		$fail = true; // errors were detected
+		// Snap Request Process
+			try{          
+				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapRedirectUrl = $snapResponse->redirect_url;
+				$snapToken = $snapResponse->token;
+			}
+			catch(Exception $e) {
+  				echo 'Error: ' .$e->getMessage();
+  				exit;
+			}
+		get_header();
+
+		if ($edd_options["mt_offinstallment_enable_redirect"]){
+			wp_redirect($snapRedirectUrl);
+		}
+		else{
+		try{
+		?>		
+        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
+        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
+        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
+	    	<button id="pay-button">Proceed to Payment</button> </center>
+        	<script type="text/javascript">
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+        		var retryCount = 0;
+        		var snapExecuted = false;
+        		var intervalFunction = 0;
+      			document.getElementById('pay-button').onclick = function(){
+      				popup();
+      			}	
+      			popup();
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+      		function popup(){
+        		intervalFunction = setInterval(function() {
+        			try{
+            			snap.pay('<?=$snapToken?>');
+            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
+          			}
+          			catch (e){ 
+            			retryCount++;
+            			if(retryCount >= 10){
+              				location.reload(); 
+              				return;
+            			}
+          				console.log(e);
+          				console.log("Snap not ready yet... Retrying in 1000ms!");
+          			}
+
+          			finally {
+            			if (snapExecuted) {
+              				clearInterval(intervalFunction);
+            			}
+          			}
+        		}, 1000);
+        	}
+        	</script>        
+			<?php          
+      	}
+      	catch (Exception $e) {
+        error_log($e->getMessage());
+      	}
+      	} 
+		get_footer();
 	}
-	if( $fail !== false ) {
+	else {
+		$fail = true;
 		// if errors are present, send the user back to the purchase page so they can be corrected
 		edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
 	}
@@ -954,10 +1191,14 @@ function edd_midtrans_promo_payment($purchase_data) {
 		// set test credentials here
 		Veritrans_Config::$isProduction = false;
 		Veritrans_Config::$serverKey = $edd_options['mt_promo_sandbox_server_key'];
+		$client_key = $edd_options['mt_promo_sandbox_client_key'];
+		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";		
 	} else {
 		// set live credentials here
 		Veritrans_Config::$isProduction = true;
 		Veritrans_Config::$serverKey = $edd_options['mt_promo_production_server_key'];
+		$client_key = $edd_options['mt_promo_production_client_key'];
+		$snap_script_url = "https://app.midtrans.com/snap/snap.js";		
 	}
 
 		// $discount_code = 'onlinepromo';
@@ -1063,16 +1304,72 @@ error_log('hehe '.print_r($mt_params,true));
 // 	do_action('remove_edd_discount_code_display');
 
 		edd_empty_cart();
-		// Redirect to veritrans
-		$snapToken = Veritrans_Snap::getSnapToken($mt_params);	
-		// error_log('mt_params: '.print_r($mt_params,true)); //debugan
-		wp_redirect( Veritrans_Snap::getRedirectUrl($mt_params) );
-		exit;
-	} else {
-		$fail = true; // errors were detected
+		// Snap Request Process
+			try{          
+				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapRedirectUrl = $snapResponse->redirect_url;
+				$snapToken = $snapResponse->token;
+			}
+			catch(Exception $e) {
+  				echo 'Error: ' .$e->getMessage();
+  				exit;
+			}
+		get_header();
+
+		if ($edd_options["mt_promo_enable_redirect"]){
+			wp_redirect($snapRedirectUrl);
+		}
+		else{
+		try{
+		?>		
+        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
+        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
+        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
+	    	<button id="pay-button">Proceed to Payment</button> </center>
+        	<script type="text/javascript">
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+        		var retryCount = 0;
+        		var snapExecuted = false;
+        		var intervalFunction = 0;
+      			document.getElementById('pay-button').onclick = function(){
+      				popup();
+      			}	
+      			popup();
+      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+      		function popup(){
+        		intervalFunction = setInterval(function() {
+        			try{
+            			snap.pay('<?=$snapToken?>');
+            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
+          			}
+          			catch (e){ 
+            			retryCount++;
+            			if(retryCount >= 10){
+              				location.reload(); 
+              				return;
+            			}
+          				console.log(e);
+          				console.log("Snap not ready yet... Retrying in 1000ms!");
+          			}
+
+          			finally {
+            			if (snapExecuted) {
+              				clearInterval(intervalFunction);
+            			}
+          			}
+        		}, 1000);
+        	}
+        	</script>        
+			<?php          
+      	}
+      	catch (Exception $e) {
+        error_log($e->getMessage());
+      	}
+      	} 
+		get_footer();
 	}
- 
-	if( $fail !== false ) {
+	else {
+		$fail = true;
 		// if errors are present, send the user back to the purchase page so they can be corrected
 		edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
 	}
@@ -1100,12 +1397,12 @@ function edd_midtrans_notification(){
 	if(edd_is_test_mode()){
 		// set test credentials here
 		// error_log('masuk test mode');  //debugan
-		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
 		Veritrans_Config::$isProduction = false;
 	}else {
 		// set test credentials here
 		// error_log('masuk production mode'); //debugan
-		Veritrans_Config::$serverKey = $edd_options['mt_production_api_key'];
+		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
 		Veritrans_Config::$isProduction = true;
 	}
 	// error_log('serverKey: '.Veritrans_Config::$serverKey); //debugan

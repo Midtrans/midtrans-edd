@@ -3,7 +3,7 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 2.0.0
+Version: 2.1.0
 Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
 Author URI: 
 Contributors: wendy0402, rizdaprasetya, aalexanderkevin
@@ -11,6 +11,7 @@ Contributors: wendy0402, rizdaprasetya, aalexanderkevin
 */
 //exit if opened directly
 if ( ! defined( 'ABSPATH' ) ) exit;
+DEFINE ('MT_PLUGIN_VERSION', get_file_data(__FILE__, array('Version' => 'Version'), false)['Version'] );
 
 /**
  * Add new section for payment option
@@ -265,6 +266,12 @@ function midtrans_add_settings($settings) {
 			'type' => 'text',
 		),
 		array(
+			'id' => 'mt_merchant_id',
+			'name' => __('Merchant ID', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'type' => 'text',
+		),		
+		array(
 			'id' => 'mt_production_server_key',
 			'name' => __('Production Server Key', 'midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans' ),$production_key_url),
@@ -350,6 +357,12 @@ function midtrans_installment_add_settings($settings) {
 			'type' => 'text',
 		),
 		array(
+			'id' => 'mt_installment_merchant_id',
+			'name' => __('Merchant ID', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'type' => 'text',
+		),			
+		array(
 			'id' => 'mt_installment_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_installment'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'midtrans_installment' ),$production_key_url),
@@ -427,6 +440,12 @@ function midtrans_offinstallment_add_settings($settings) {
 			'desc' => __('<br>Payment gateway text label that will be shown as payment options to your customers (Default = "Credit Card Installment for any Bank via Midtrans")'),
 			'type' => 'text',
 		),
+		array(
+			'id' => 'mt_offinstallment_merchant_id',
+			'name' => __('Merchant ID', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'type' => 'text',
+		),	
 		array(
 			'id' => 'mt_offinstallment_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_offinstallment'),
@@ -511,6 +530,12 @@ function midtrans_promo_add_settings($settings) {
 			'desc' => __('<br>Payment gateway text label that will be shown as payment options to your customers (Default = "Promo Discount via Midtrans")'),
 			'type' => 'text',
 		),	
+		array(
+			'id' => 'mt_promo_merchant_id',
+			'name' => __('Merchant ID', 'midtrans'),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'midtrans' ),$sandbox_key_url),
+			'type' => 'text',
+		),			
 		array(
 			'id' => 'mt_promo_production_server_key',
 			'name' => __('Production Server Key', 'midtrans_promo'),
@@ -636,31 +661,28 @@ function edd_midtrans_payment($purchase_data) {
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
-		// set test credentials here
+		// set Sandbox credentials here
 		Veritrans_Config::$isProduction = false;
 		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
 		$client_key = $edd_options['mt_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
+		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";
 	} else {
-		// set live credentials here
+		// set Production credentials here
 		Veritrans_Config::$isProduction = true;
 		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
 		$client_key = $edd_options['mt_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
+		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
 	}
  
 	// check for any stored errors
 	$errors = edd_get_errors();
 	if(!$errors) {
- 
 		$purchase_summary = edd_get_purchase_summary($purchase_data);
- 		// error_log('purchase data: '.print_r($purchase_data,true)); //debugan
- 		// error_log('purchase summary: '.print_r($purchase_summary,true)); //debugan
- 		// error_log('plugin_dir_path : '.plugin_dir_path(__FILE__)); //debugan
 		/**********************************
 		* setup the payment details
 		**********************************/
- 		// error_log(json_encode($purchase_data, true));
 		$payment = array( 
 			'price' => $purchase_data['price'], 
 			'date' => $purchase_data['date'], 
@@ -736,7 +758,7 @@ function edd_midtrans_payment($purchase_data) {
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
           $mt_params['custom_field3'] = !empty($custom_fields_params[2]) ? $custom_fields_params[2] : null;
         }
-		error_log('midtrans'.print_r($mt_params,true));                
+		error_log('midtrans'.print_r($mt_params,true)); 
    		// get rid of cart contents
 		edd_empty_cart();
 		// Snap Request Process
@@ -757,11 +779,44 @@ function edd_midtrans_payment($purchase_data) {
 		else{
 		try{
 		?>		
+		<!-- start Mixpanel -->
+		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
+		<!-- TODO replace above with real mixpanel key -->
+		<!-- end Mixpanel -->			
         	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
         	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
         	<p>Continue payment via payment popup window.<br>Or click button below: </p>
 	    	<button id="pay-button">Proceed to Payment</button> </center>
         	<script type="text/javascript">
+        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
+  					var eventNames = {
+    					pay: 'pg-pay',
+    					success: 'pg-success',
+    					pending: 'pg-pending',
+    					error: 'pg-error',
+    					close: 'pg-close'
+  					};
+  					mixpanel.track(
+    					eventNames[status], {
+      						merchant_id: merchant_id,
+      						cms_name: cms_name,
+      						cms_version: cms_version,
+      						plugin_name: plugin_name,
+      						plugin_version: plugin_version,
+      						snap_token: snap_token,
+      						payment_type: result ? result.payment_type: null,
+      						order_id: result ? result.order_id: null,
+      						status_code: result ? result.status_code: null,
+      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
+    					}
+  					);
+				}
+				var MID_SNAP_TOKEN = "<?=$snapToken?>";
+				var MID_MERCHANT_ID = "<?=$edd_options["mt_merchant_id"];?>";
+				var MID_CMS_NAME = "easy digital downloads";
+				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>";
+				var MID_PLUGIN_NAME = "fullpayment";
+				var MID_PLUGIN_VERSION = "<?php echo MT_PLUGIN_VERSION;?>";
       		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
         		var retryCount = 0;
         		var snapExecuted = false;
@@ -774,9 +829,24 @@ function edd_midtrans_payment($purchase_data) {
       		function popup(){
         		intervalFunction = setInterval(function() {
         			try{
-            			snap.pay('<?=$snapToken?>');
+            			snap.pay(MID_SNAP_TOKEN,{
+    						onSuccess: function(result){
+      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+      							window.location = result.finish_redirect_url; 
+    						},
+    						onPending: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+      						window.location = result.finish_redirect_url;
+    						},
+    						onError: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+    						},
+    						onClose: function(){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+    						}
+    					});
             			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
-          			}
+         			}
           			catch (e){ 
             			retryCount++;
             			if(retryCount >= 10){
@@ -786,11 +856,12 @@ function edd_midtrans_payment($purchase_data) {
           				console.log(e);
           				console.log("Snap not ready yet... Retrying in 1000ms!");
           			}
-
           			finally {
             			if (snapExecuted) {
-              				clearInterval(intervalFunction);
-            			}
+              			 clearInterval(intervalFunction);
+            			 // record 'pay' event to Mixpanel
+      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);	
+           			}
           			}
         		}, 1000);
         	}
@@ -819,31 +890,28 @@ function edd_midtrans_installment_payment($purchase_data) {
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
-		// set test credentials here
+		// set Sandbox credentials here
 		Veritrans_Config::$isProduction = false;
 		Veritrans_Config::$serverKey = $edd_options['mt_installment_sandbox_server_key'];
 		$client_key = $edd_options['mt_installment_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
+		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";		
 	} else {
-		// set live credentials here
+		// set Prouction credentials here
 		Veritrans_Config::$isProduction = true;
 		Veritrans_Config::$serverKey = $edd_options['mt_installment_production_server_key'];
 		$client_key = $edd_options['mt_installment_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
+		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
 	}
  
 	// check for any stored errors
 	$errors = edd_get_errors();
 	if(!$errors) {
- 
 		$purchase_summary = edd_get_purchase_summary($purchase_data);
- 		// error_log('purchase data: '.print_r($purchase_data,true)); //debugan
- 		// error_log('purchase summary: '.print_r($purchase_summary,true)); //debugan
- 		// error_log('plugin_dir_path : '.plugin_dir_path(__FILE__)); //debugan
 		/**********************************
 		* setup the payment details
 		**********************************/
- 		// error_log(json_encode($purchase_data, true));
 		$payment = array( 
 			'price' => $purchase_data['price'], 
 			'date' => $purchase_data['date'], 
@@ -941,12 +1009,45 @@ function edd_midtrans_installment_payment($purchase_data) {
 		}
 		else{
 		try{
-		?>		
+		?>				
+		<!-- start Mixpanel -->
+		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
+		<!-- TODO replace above with real mixpanel key -->
+		<!-- end Mixpanel -->			
         	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
         	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
         	<p>Continue payment via payment popup window.<br>Or click button below: </p>
 	    	<button id="pay-button">Proceed to Payment</button> </center>
         	<script type="text/javascript">
+        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
+  					var eventNames = {
+    					pay: 'pg-pay',
+    					success: 'pg-success',
+    					pending: 'pg-pending',
+    					error: 'pg-error',
+    					close: 'pg-close'
+  					};
+  					mixpanel.track(
+    					eventNames[status], {
+      						merchant_id: merchant_id,
+      						cms_name: cms_name,
+      						cms_version: cms_version,
+      						plugin_name: plugin_name,
+      						plugin_version: plugin_version,
+      						snap_token: snap_token,
+      						payment_type: result ? result.payment_type: null,
+      						order_id: result ? result.order_id: null,
+      						status_code: result ? result.status_code: null,
+      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
+    					}
+  					);
+				}
+				var MID_SNAP_TOKEN = "<?=$snapToken?>";
+				var MID_MERCHANT_ID = "<?=$edd_options["mt_installment_merchant_id"];?>";
+				var MID_CMS_NAME = "easy digital downloads";
+				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>";
+				var MID_PLUGIN_NAME = "online installment";
+				var MID_PLUGIN_VERSION = "<?php echo MT_PLUGIN_VERSION;?>";
       		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
         		var retryCount = 0;
         		var snapExecuted = false;
@@ -959,9 +1060,24 @@ function edd_midtrans_installment_payment($purchase_data) {
       		function popup(){
         		intervalFunction = setInterval(function() {
         			try{
-            			snap.pay('<?=$snapToken?>');
+            			snap.pay(MID_SNAP_TOKEN,{
+    						onSuccess: function(result){
+      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+      							window.location = result.finish_redirect_url; 
+    						},
+    						onPending: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+      						window.location = result.finish_redirect_url;
+    						},
+    						onError: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+    						},
+    						onClose: function(){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+    						}
+    					});
             			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
-          			}
+         			}
           			catch (e){ 
             			retryCount++;
             			if(retryCount >= 10){
@@ -971,11 +1087,12 @@ function edd_midtrans_installment_payment($purchase_data) {
           				console.log(e);
           				console.log("Snap not ready yet... Retrying in 1000ms!");
           			}
-
           			finally {
             			if (snapExecuted) {
-              				clearInterval(intervalFunction);
-            			}
+              			 clearInterval(intervalFunction);
+            			 // record 'pay' event to Mixpanel
+      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);	
+           			}
           			}
         		}, 1000);
         	}
@@ -1004,31 +1121,28 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
-		// set test credentials here
+		// set Sandbox credentials here
 		Veritrans_Config::$isProduction = false;
 		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_sandbox_server_key'];
 		$client_key = $edd_options['mt_offinstallment_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
+		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";		
 	} else {
-		// set live credentials here
+		// set Production credentials here
 		Veritrans_Config::$isProduction = true;
 		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_production_server_key'];
 		$client_key = $edd_options['mt_offinstallment_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
+		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
 	}
  
 	// check for any stored errors
 	$errors = edd_get_errors();
-	if(!$errors) {
- 
+	if(!$errors) { 
 		$purchase_summary = edd_get_purchase_summary($purchase_data);
- 		// error_log('purchase data: '.print_r($purchase_data,true)); //debugan
- 		// error_log('purchase summary: '.print_r($purchase_summary,true)); //debugan
- 		// error_log('plugin_dir_path : '.plugin_dir_path(__FILE__)); //debugan
 		/**********************************
 		* setup the payment details
 		**********************************/
- 		// error_log(json_encode($purchase_data, true));
 		$payment = array( 
 			'price' => $purchase_data['price'], 
 			'date' => $purchase_data['date'], 
@@ -1126,11 +1240,44 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
 		else{
 		try{
 		?>		
+		<!-- start Mixpanel -->
+		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
+		<!-- TODO replace above with real mixpanel key -->
+		<!-- end Mixpanel -->			
         	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
         	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
         	<p>Continue payment via payment popup window.<br>Or click button below: </p>
 	    	<button id="pay-button">Proceed to Payment</button> </center>
         	<script type="text/javascript">
+        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
+  					var eventNames = {
+    					pay: 'pg-pay',
+    					success: 'pg-success',
+    					pending: 'pg-pending',
+    					error: 'pg-error',
+    					close: 'pg-close'
+  					};
+  					mixpanel.track(
+    					eventNames[status], {
+      						merchant_id: merchant_id,
+      						cms_name: cms_name,
+      						cms_version: cms_version,
+      						plugin_name: plugin_name,
+      						plugin_version: plugin_version,
+      						snap_token: snap_token,
+      						payment_type: result ? result.payment_type: null,
+      						order_id: result ? result.order_id: null,
+      						status_code: result ? result.status_code: null,
+      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
+    					}
+  					);
+				}
+				var MID_SNAP_TOKEN = "<?=$snapToken?>"; 
+				var MID_MERCHANT_ID = "<?=$edd_options["mt_offinstallment_merchant_id"];?>"; 
+				var MID_CMS_NAME = "easy digital downloads"; 
+				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>"; 
+				var MID_PLUGIN_NAME = "offline installment"; 
+				var MID_PLUGIN_VERSION = "<?php echo MT_PLUGIN_VERSION;?>";      		
       		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
         		var retryCount = 0;
         		var snapExecuted = false;
@@ -1143,9 +1290,24 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
       		function popup(){
         		intervalFunction = setInterval(function() {
         			try{
-            			snap.pay('<?=$snapToken?>');
+            			snap.pay(MID_SNAP_TOKEN,{
+    						onSuccess: function(result){
+      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+      							window.location = result.finish_redirect_url; 
+    						},
+    						onPending: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+      						window.location = result.finish_redirect_url;
+    						},
+    						onError: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+    						},
+    						onClose: function(){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+    						}
+    					});
             			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
-          			}
+         			}
           			catch (e){ 
             			retryCount++;
             			if(retryCount >= 10){
@@ -1155,11 +1317,12 @@ function edd_midtrans_offinstallment_payment($purchase_data) {
           				console.log(e);
           				console.log("Snap not ready yet... Retrying in 1000ms!");
           			}
-
           			finally {
             			if (snapExecuted) {
-              				clearInterval(intervalFunction);
-            			}
+              			 clearInterval(intervalFunction);
+            			 // record 'pay' event to Mixpanel
+      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);	
+           			}
           			}
         		}, 1000);
         	}
@@ -1188,17 +1351,19 @@ function edd_midtrans_promo_payment($purchase_data) {
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
-		// set test credentials here
+		// set Sandbox credentials here
 		Veritrans_Config::$isProduction = false;
 		Veritrans_Config::$serverKey = $edd_options['mt_promo_sandbox_server_key'];
 		$client_key = $edd_options['mt_promo_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";		
+		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";		
 	} else {
-		// set live credentials here
+		// set Production credentials here
 		Veritrans_Config::$isProduction = true;
 		Veritrans_Config::$serverKey = $edd_options['mt_promo_production_server_key'];
 		$client_key = $edd_options['mt_promo_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";		
+		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
 	}
 
 		// $discount_code = 'onlinepromo';
@@ -1207,15 +1372,10 @@ function edd_midtrans_promo_payment($purchase_data) {
 	// check for any stored errors
 	$errors = edd_get_errors();
 	if(!$errors) {
- 
 		$purchase_summary = edd_get_purchase_summary($purchase_data);
- 		// error_log('purchase data: '.print_r($purchase_data,true)); //debugan
- 		// error_log('purchasem summary: '.print_r($purchase_summary,true)); //debugan
- 		// error_log('plugin_dir_path : '.plugin_dir_path(__FILE__)); //debugan
 		/**********************************
 		* setup the payment details
 		**********************************/
- 		// error_log(json_encode($purchase_data, true));
 		$payment = array( 
 			'price' => $purchase_data['price'], 
 			'date' => $purchase_data['date'], 
@@ -1321,12 +1481,45 @@ error_log('hehe '.print_r($mt_params,true));
 		}
 		else{
 		try{
-		?>		
+		?>			
+		<!-- start Mixpanel -->
+		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
+		<!-- TODO replace above with real mixpanel key -->
+		<!-- end Mixpanel -->			
         	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
         	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
         	<p>Continue payment via payment popup window.<br>Or click button below: </p>
 	    	<button id="pay-button">Proceed to Payment</button> </center>
         	<script type="text/javascript">
+        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
+  					var eventNames = {
+    					pay: 'pg-pay',
+    					success: 'pg-success',
+    					pending: 'pg-pending',
+    					error: 'pg-error',
+    					close: 'pg-close'
+  					};
+  					mixpanel.track(
+    					eventNames[status], {
+      						merchant_id: merchant_id,
+      						cms_name: cms_name,
+      						cms_version: cms_version,
+      						plugin_name: plugin_name,
+      						plugin_version: plugin_version,
+      						snap_token: snap_token,
+      						payment_type: result ? result.payment_type: null,
+      						order_id: result ? result.order_id: null,
+      						status_code: result ? result.status_code: null,
+      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
+    					}
+  					);
+				}
+				var MID_SNAP_TOKEN = "<?=$snapToken?>"; 
+				var MID_MERCHANT_ID = "<?=$edd_options["mt_promo_merchant_id"];?>"; 
+				var MID_CMS_NAME = "easy digital downloads"; 
+				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>"; 
+				var MID_PLUGIN_NAME = "bin promo"; 
+				var MID_PLUGIN_VERSION = "<?php echo MT_PLUGIN_VERSION;?>";      		
       		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
         		var retryCount = 0;
         		var snapExecuted = false;
@@ -1339,9 +1532,24 @@ error_log('hehe '.print_r($mt_params,true));
       		function popup(){
         		intervalFunction = setInterval(function() {
         			try{
-            			snap.pay('<?=$snapToken?>');
+            			snap.pay(MID_SNAP_TOKEN,{
+    						onSuccess: function(result){
+      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+      							window.location = result.finish_redirect_url; 
+    						},
+    						onPending: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+      						window.location = result.finish_redirect_url;
+    						},
+    						onError: function(result){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+    						},
+    						onClose: function(){
+      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+    						}
+    					});
             			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
-          			}
+         			}
           			catch (e){ 
             			retryCount++;
             			if(retryCount >= 10){
@@ -1351,11 +1559,12 @@ error_log('hehe '.print_r($mt_params,true));
           				console.log(e);
           				console.log("Snap not ready yet... Retrying in 1000ms!");
           			}
-
           			finally {
             			if (snapExecuted) {
-              				clearInterval(intervalFunction);
-            			}
+              			 clearInterval(intervalFunction);
+            			 // record 'pay' event to Mixpanel
+      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);	
+           			}
           			}
         		}, 1000);
         	}
@@ -1376,69 +1585,40 @@ error_log('hehe '.print_r($mt_params,true));
 }
 add_action('edd_gateway_midtrans_promo', 'edd_midtrans_promo_payment');
 
-/**
- * Get Enabled Payment from backend settings
- * @return array $enabled_payment
- **/
-function edd_get_mtpayment_ops()
-{
-	global $edd_options;
-	//get 3ds opts from backend
-	Veritrans_Config::$is3ds = $edd_options['mt_promo_3ds'] ? true : false;
-	// error_log('mt_3ds '.$edd_options['mt_3ds']); //debugan
-	// error_log('credit_card '.$edd_options['mt_credit_card']); //debugan
-// error_log('enabled payments array'.print_r($enabled_payments,true)); //debugan
-    return $enabled_payments;
-}
 // to get notification from veritrans
 function edd_midtrans_notification(){
 	global $edd_options;
 	require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
 	if(edd_is_test_mode()){
-		// set test credentials here
-		// error_log('masuk test mode');  //debugan
+		// set Sandbox credentials here
 		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
 		Veritrans_Config::$isProduction = false;
 	}else {
-		// set test credentials here
-		// error_log('masuk production mode'); //debugan
+		// set Production credentials here
 		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
 		Veritrans_Config::$isProduction = true;
 	}
-	// error_log('serverKey: '.Veritrans_Config::$serverKey); //debugan
-	// error_log('isProduction: '.Veritrans_Config::$isProduction); //debugan
-	
 	$notif = new Veritrans_Notification();
-	// error_log('$notif '.print_r($notif)); //debugan
 	$transaction = $notif->transaction_status;
 	$fraud = $notif->fraud_status;
 	$order_id = $notif->order_id;
-	// error_log('$order_id '.$order_id); //debugan
-	// error_log('$fraud '.$fraud); //debugan
-	// error_log('$transaction '.$transaction); //debugan
 	
 	if ($transaction == 'capture') {
 		if ($fraud == 'challenge') {
-		 	// TODO Set payment status in merchant's database to 'challenge'
 			edd_update_payment_status($order_id, 'challenge');
-			// error_log('challenge gan!'); //debugan
 		}
 		else if ($fraud == 'accept') {
 		 	edd_update_payment_status($order_id, 'complete');
-			// error_log('accepted gan!'); //debugan
 		}
 	}
 	else if ($notif->transaction_status != 'credit_card' && $transaction == 'settlement') {
 		edd_update_payment_status($order_id, 'complete');
-			// error_log('accepted gan!'); //debugan
 	}
 	else if ($transaction == 'cancel') {
 		edd_update_payment_status($order_id, 'cancel');
-			// error_log('cancelled gan!'); //debugan
 	}
 	else if ($transaction == 'deny') {
 	 	edd_update_payment_status($order_id, 'failed');
-			// error_log('denied gan!'); //debugan
 	}
 	else if ($transaction == 'deny') {
 	 	edd_update_payment_status($order_id, 'failed');

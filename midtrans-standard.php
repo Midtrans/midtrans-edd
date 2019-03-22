@@ -3,7 +3,7 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 2.1.0
+Version: 2.1.1
 Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
 Author URI: 
 Contributors: wendy0402, rizdaprasetya, aalexanderkevin
@@ -758,7 +758,7 @@ function edd_midtrans_payment($purchase_data) {
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
           $mt_params['custom_field3'] = !empty($custom_fields_params[2]) ? $custom_fields_params[2] : null;
         }
-		error_log('midtrans'.print_r($mt_params,true)); 
+		// error_log('midtrans'.print_r($mt_params,true)); //debugan
    		// get rid of cart contents
 		edd_empty_cart();
 		// Snap Request Process
@@ -836,7 +836,11 @@ function edd_midtrans_payment($purchase_data) {
     						},
     						onPending: function(result){
       						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
-      						window.location = result.finish_redirect_url;
+      						if(result.hasOwnProperty("pdf_url")){
+                				var PDF = "&pdf="+result.pdf_url;
+              				}
+              				else {var PDF = "";}
+      						window.location = result.finish_redirect_url + PDF;
     						},
     						onError: function(result){
       						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
@@ -1451,7 +1455,7 @@ function edd_midtrans_promo_payment($purchase_data) {
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
           $mt_params['custom_field3'] = !empty($custom_fields_params[2]) ? $custom_fields_params[2] : null;
         } 			      
-error_log('hehe '.print_r($mt_params,true));
+// error_log('hehe '.print_r($mt_params,true)); //debugan
 //    		edd_set_cart_discount( 'onlinepromo' )
 // edd_cart_items_before();	
 
@@ -1641,22 +1645,23 @@ function edd_listen_for_midtrans_notification() {
 		}
 		else{
 			if ($status == 'capture'){
-				edd_update_payment_status($order, 'pending');
+				$_SESSION['pdf'] = "";
  				edd_send_to_success_page();
-				do_shortcode('[edd_receipt payment_method="0" error="error cuk"]');				
  			}
  			else if ($status == 'pending'){
-				edd_update_payment_status($order, 'pending');
-				$content = do_shortcode('[shortcode discount="0"]');
-				edd_filter_success_page_content($content);
+				if ($_REQUEST['pdf']){
+				$_SESSION['pdf'] = $_REQUEST['pdf'];
+				error_log('pdf nih' .  $_SESSION['pdf']);	
+				}
+				else{
+					$_SESSION['pdf'] = "";
+				}				
  				edd_send_to_success_page();
-				do_shortcode('[edd_receipt payment_method="0" error="error cuk"]');				
  			}	
  		}	
 	}
 }
 add_action( 'init', 'edd_listen_for_midtrans_notification' );
-
 
 function mid_edd_display_checkout_fields() {
 ?>
@@ -1744,14 +1749,33 @@ function mid_edd_email_tag_phone( $payment_id ) {
 
 remove_action( 'edd_checkout_form_top', 'edd_discount_field', -1 );
 
-function midtrans_edd_thank_customer()
-{
-    if (function_exists('edd_is_success_page') && !edd_is_success_page()) {
-        return;
-    }
-    $message = '<h2>Your purchase was successful</h2>';
-    if ($message) {
-        return $message;
-    }
-    return null;
+/**
+ * Applies filters to the success page content.
+ *
+ * @param string $content Content before filters
+ * @return string $content Filtered content
+ *
+ * TODO : handle status changed from pending to settlemen
+ */
+function edd_midtrans_page_content( $content ) {
+    error_log('masuk custom');
+	// Check if we're on the success page
+	if (edd_is_success_page()) {
+		if ($_SESSION['pdf']){
+    		$message  = '<div class="edd-midtrans">';
+    		$message .= '<h3>Payment Instruction</h3>';
+    		$message .= '<p><a href="' . $_SESSION['pdf'] . '" target="_blank">' . $_SESSION['pdf'] . '</a></p>' ;
+   			$message .= '</div>';
+			error_log('masuk isset dan pdf'. $_SESSION['pdf'].'yeye');
+			if (has_filter('edd_payment_confirm_' . $_GET['payment-confirmation'])) {
+            	$content = apply_filters('edd_payment_confirm_' . $_GET['payment-confirmation'], $content);
+        	}
+			return $content . $message;
+		}
+		else return $content;
+	}
+	// Fallback to returning the default content
+	else
+		return $content;
 }
+add_filter( 'the_content', 'edd_midtrans_page_content' );

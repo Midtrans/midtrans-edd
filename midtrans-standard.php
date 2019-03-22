@@ -3,7 +3,7 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 2.1.1
+Version: 2.1.2
 Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
 Author URI: 
 Contributors: wendy0402, rizdaprasetya, aalexanderkevin
@@ -118,61 +118,6 @@ function rupiah_currencies( $currencies ) {
 	return $currencies;	
 }
 add_filter( 'edd_currencies', 'rupiah_currencies');
-
-#To add payment status challenge
-function add_edd_payment_statuses( $payment_statuses ) {
-    $payment_statuses['on_process']   = 'On Process';    
-    $payment_statuses['challenge']   = 'Challenge';
-    $payment_statuses['cancel']   = 'Cancel';
-    return $payment_statuses;   
-}
-add_filter( 'edd_payment_statuses', 'add_edd_payment_statuses' );
-
-/**
- * Registers challenge statuses as post statuses so we can use them in Payment History navigation
- */
-function register_post_type_statuses() {
- 
-    // Payment Statuses
-    register_post_status( 'challenge', array(
-        'label'                     => _x( 'Challenge', 'challenge, payment status', 'edd' ),
-        'public'                    => true,
-        'exclude_from_search'       => false,
-        'show_in_admin_all_list'    => true,
-        'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop( 'Challange <span class="count">(%s)</span>', 'Challenge <span class="count">(%s)</span>', 'edd' )
-    ) );
-    register_post_status( 'cancel', array(
-        'label'                     => _x( 'Cancel', 'cancel, payment status', 'edd' ),
-        'public'                    => true,
-        'exclude_from_search'       => false,
-        'show_in_admin_all_list'    => true,
-        'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop( 'Cancel <span class="count">(%s)</span>', 'Cancel <span class="count">(%s)</span>', 'edd' )
-    ) );
-    register_post_status( 'on_process', array(
-        'label'                     => _x( 'On Process', 'on_process, payment status', 'edd' ),
-        'public'                    => true,
-        'exclude_from_search'       => false,
-        'show_in_admin_all_list'    => true,
-        'show_in_admin_status_list' => true,
-        'label_count'               => _n_noop( 'On Process <span class="count">(%s)</span>', 'On Process <span class="count">(%s)</span>', 'edd' )
-    ) );    
-}
-add_action( 'init', 'register_post_type_statuses' );
- 
-/**
- * Adds challenge payment statuses to the Payment History navigation
- */
-function edd_payments_new_views( $views ) {
-     
-    $views['challenge']  = sprintf( '<a href="%s">%s</a>', add_query_arg( array( 'status' => 'challenge', 'paged' => FALSE ) ), 'Challenge' ); 
-    $views['cancel']  = sprintf( '<a href="%s">%s</a>', add_query_arg( array( 'status' => 'cancel', 'paged' => FALSE ) ), 'Cancel' );
-    $views['on_process']  = sprintf( '<a href="%s">%s</a>', add_query_arg( array( 'status' => 'on_process', 'paged' => FALSE ) ), 'On Process' );     
-    return $views;
- 
-}
-add_filter( 'edd_payments_table_views', 'edd_payments_new_views' );
 
 function midtrans_gateway_cc_form($purchase_data) {	
 	global $edd_options;	
@@ -1609,22 +1554,32 @@ function edd_midtrans_notification(){
 	
 	if ($transaction == 'capture') {
 		if ($fraud == 'challenge') {
-			edd_update_payment_status($order_id, 'challenge');
+			edd_insert_payment_note( $order_id, __( 'Midtrans Challenged Payment', 'edd-midtrans' ) );			
+			edd_update_payment_status($order_id, 'pending');
 		}
 		else if ($fraud == 'accept') {
+			edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );			
 		 	edd_update_payment_status($order_id, 'complete');
 		}
 	}
 	else if ($notif->transaction_status != 'credit_card' && $transaction == 'settlement') {
+		edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );		
 		edd_update_payment_status($order_id, 'complete');
 	}
+	else if ($transaction == 'pending') {
+		edd_insert_payment_note( $order_id, __( 'Midtrans Awaiting Payment', 'edd-midtrans' ) );
+		edd_update_payment_status($order_id, 'pending');
+	}	
 	else if ($transaction == 'cancel') {
-		edd_update_payment_status($order_id, 'cancel');
+		edd_insert_payment_note( $order_id, __( 'Midtrans Cancelled Payment', 'edd-midtrans' ) );
+		edd_update_payment_status($order_id, 'failed');
 	}
-	else if ($transaction == 'deny') {
+	else if ($transaction == 'expire') {
+		edd_insert_payment_note( $order_id, __( 'Midtrans Expired Payment', 'edd-midtrans' ) );
 	 	edd_update_payment_status($order_id, 'failed');
 	}
 	else if ($transaction == 'deny') {
+		edd_insert_payment_note( $order_id, __( 'Midtrans Expired Payment', 'edd-midtrans' ) );
 	 	edd_update_payment_status($order_id, 'failed');
 	}
 };

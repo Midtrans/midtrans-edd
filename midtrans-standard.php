@@ -210,7 +210,7 @@ function mid_edd_email_tag_phone( $payment_id ) {
 	return $payment_data['phone'];
 }
 
-remove_action( 'edd_checkout_form_top', 'edd_discount_field', -1 );
+// remove_action( 'edd_checkout_form_top', 'edd_discount_field', -1 );
 
 /**
  * Applies filters to the success page content.

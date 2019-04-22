@@ -3,7 +3,7 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 2.2.0
+Version: 2.2.1
 Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
 Author URI: 
 Contributors: wendy0402, rizdaprasetya, aalexanderkevin

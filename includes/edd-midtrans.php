@@ -198,6 +198,22 @@ function edd_midtrans_payment($purchase_data) {
 			);
 			array_push($transaction_details, $mt_item);
 		};
+
+		$fees = edd_get_cart_fees();
+		if (!empty($fees)) {
+			$keys = array_keys($fees);
+			for ($i = 0; $i < count($fees); $i++) {
+				$id = $keys[$i];
+				$mt_fee = array(
+					'id' => $id,
+					'price' => $fees[$id]['amount'],
+					'quantity' => 1,
+					'name' => $fees[$id]['label']
+				);
+				array_push($transaction_details, $mt_fee);
+			};
+		}
+
         if (strlen($edd_options['mt_enabled_payment']) > 0){
           $enable_payment = explode(',', $edd_options['mt_enabled_payment']);
         }  		

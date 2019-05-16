@@ -1,17 +1,16 @@
 <?php
 /*
-Plugin Name: Easy Digital Downloads - Midtrans Gateway
+Plugin Name: EDD - Midtrans Gateway
 Plugin URL: 
 Description: Midtrans Payment Gateway plugin for Easy Digital Downloads
-Version: 2.2.1
-Author: Wendy kurniawan Soesanto, Rizda Dwi Prasetya, Alexander Kevin
+Version: 2.3.0
+Author: Midtrans
 Author URI: 
-Contributors: wendy0402, rizdaprasetya, aalexanderkevin
 
 */
 //exit if opened directly
 if ( ! defined( 'ABSPATH' ) ) exit;
-DEFINE ('MT_PLUGIN_VERSION', get_file_data(__FILE__, array('Version' => 'Version'), false)['Version'] );
+DEFINE ('EDD_MIDTRANS_PLUGIN_VERSION', get_file_data(__FILE__, array('Version' => 'Version'), false)['Version'] );
 
 /*
 |--------------------------------------------------------------------------
@@ -33,13 +32,13 @@ require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
 
 #To add currency Rp and IDR
 #
-function rupiah_currencies( $currencies ) {
+function midtrans_gateway_rupiah_currencies( $currencies ) {
 	if(!array_key_exists('Rp', $currencies)){
 		$currencies['Rp'] = __('Indonesian Rupiah ( Rp )', 'edd-midtrans');
 	}
 	return $currencies;	
 }
-add_filter( 'edd_currencies', 'rupiah_currencies');
+add_filter( 'edd_currencies', 'midtrans_gateway_rupiah_currencies');
 
 
 // to get notification from veritrans
@@ -100,7 +99,8 @@ function edd_listen_for_midtrans_notification() {
 		// error_log('masuk edd_listen_for_veritrans_notification, '.$_GET['edd-listener']); //debugan
 		do_action( 'edd_midtrans_notification' );
 	}
-	if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans' ) {
+
+	if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans'  && wp_verify_nonce($_GET['nonce'], 'edd_midtrans_gateway' . $_REQUEST['order_id'] )) {
 		$order = $_REQUEST['order_id'];
 		$status = $_REQUEST['transaction_status'];
 		if (isset( $_GET['edd-listener'])){
@@ -221,7 +221,6 @@ function mid_edd_email_tag_phone( $payment_id ) {
  * TODO : handle status changed from pending to settlemen
  */
 function edd_midtrans_page_content( $content ) {
-    error_log('masuk custom');
 	// Check if we're on the success page
 	if (edd_is_success_page()) {
 		if ($_SESSION['pdf']){

@@ -3,7 +3,7 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 
 // registers midtrans gateway
-function midtrans_register_gateway($gateways) {
+function edd_midtrans_gateway_register($gateways) {
 	global $edd_options;
 	$checkout_label = 'Online Payment via Midtrans';
 	//check checkout label field from backend, then set if not null and not empty string
@@ -16,18 +16,18 @@ function midtrans_register_gateway($gateways) {
 	);
 	return $gateways;
 }
-add_filter('edd_payment_gateways', 'midtrans_register_gateway');
+add_filter('edd_payment_gateways', 'edd_midtrans_gateway_register');
 
 /**
  * Add new section for payment options
  */
-function edd_midtrans_settings_section( $sections ) {
+function edd_midtrans_gateway_settings_section( $sections ) {
 	$sections['midtrans'] = __( 'Midtrans', 'edd-midtrans' );
 	return $sections;
 }
-add_filter( 'edd_settings_sections_gateways', 'edd_midtrans_settings_section' );
+add_filter( 'edd_settings_sections_gateways', 'edd_midtrans_gateway_settings_section' );
 
-function midtrans_gateway_cc_form($purchase_data) {	
+function edd_midtrans_gateway_cc_form($purchase_data) {	
 	global $edd_options;	
 	// if(isset($edd_options['mt_promo_code']) and $edd_options['mt_promo_code'] != ''){
 	// 			$promo = $edd_options['mt_promo_code'];
@@ -38,10 +38,10 @@ function midtrans_gateway_cc_form($purchase_data) {
 	// edd_unset_cart_discount( $promo );
 	return;
 }
-add_action('edd_midtrans_cc_form', 'midtrans_gateway_cc_form');
+add_action('edd_midtrans_cc_form', 'edd_midtrans_gateway_cc_form');
 
 // Add the settings to the Payment Gateways section
-function midtrans_add_settings($settings) {
+function edd_midtrans_gateway_add_settings($settings) {
         $sandbox_key_url = 'https://dashboard.sandbox.midtrans.com/settings/config_info';
         $production_key_url = 'https://dashboard.midtrans.com/settings/config_info';
 
@@ -105,7 +105,13 @@ function midtrans_add_settings($settings) {
 			'name' => __('Enable Payment Page Redirection', 'edd-midtrans'),
 			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>', 'edd-midtrans'),
 			'type' => 'checkbox',	
-		),	
+		),
+		array(
+			'id' => 'mt_enable_mixpanel',
+			'name' => __('Allowed midtrans to activate plugin analytic', 'edd-midtrans'),
+			'desc' => __('This will enabling midtrans for tracking user on snap.js event (onSuccess, onPending, onError, onClose) internally for analytic purposes', 'edd-midtrans'),
+			'type' => 'checkbox',	
+		),
 		array(
 			'id' => 'mt_enabled_payment',
 			'name' => __('Allowed Payment Method', 'edd-midtrans'),
@@ -130,9 +136,9 @@ function midtrans_add_settings($settings) {
     }
 	return array_merge($settings, $midtrans_settings);	
 }
-add_filter('edd_settings_gateways', 'midtrans_add_settings');
+add_filter('edd_settings_gateways', 'edd_midtrans_gateway_add_settings');
 
-function edd_midtrans_plugin_action_links( $links ) {
+function edd_midtrans_gateway_plugin_action_links( $links ) {
 
     $settings_link = array(
         'settings' => '<a href="' . admin_url( 'edit.php?post_type=download&page=edd-settings&tab=gateways&section=midtrans' ) . '" title="Settings">Settings</a>'
@@ -141,10 +147,10 @@ function edd_midtrans_plugin_action_links( $links ) {
     return array_merge( $settings_link, $links );
 
 }
-add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_plugin_action_links' );
+add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_gateway_plugin_action_links' );
 
 // processes the payment-mode
-function edd_midtrans_payment($purchase_data) {
+function edd_midtrans_gateway_payment($purchase_data) {
 	global $edd_options;
 	// require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
 	/**********************************
@@ -192,7 +198,7 @@ function edd_midtrans_payment($purchase_data) {
 		foreach($purchase_data['cart_details'] as $item){
 			$mt_item = array(
 				'id' => $item['id'],
-				'price' => $item['price'],
+				'price' => intval($item['price']),
 				'quantity' => $item['quantity'],
 				'name' => $item['name']
 			);
@@ -206,7 +212,7 @@ function edd_midtrans_payment($purchase_data) {
 				$id = $keys[$i];
 				$mt_fee = array(
 					'id' => $id,
-					'price' => $fees[$id]['amount'],
+					'price' => intval($fees[$id]['amount']),
 					'quantity' => 1,
 					'name' => $fees[$id]['label']
 				);
@@ -218,11 +224,11 @@ function edd_midtrans_payment($purchase_data) {
           $enable_payment = explode(',', $edd_options['mt_enabled_payment']);
         }  		
 		$edd_get_base_url = home_url( '/');
-		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans' ), home_url( 'index.php' ) ) );	
+		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );	
 		$mt_params = array(
 			'transaction_details' => array(
 				'order_id' 			=> $payment,
-				'gross_amount' 		=> $purchase_data['price']
+				'gross_amount' 		=> intval($purchase_data['price'])
 				),
 			'customer_details' 	=> array(
 				'first_name' 		=> $purchase_data['user_info']['first_name'],
@@ -284,16 +290,20 @@ function edd_midtrans_payment($purchase_data) {
 		}
 		else{
 		try{
-		?>		
+		?>
+
+  		<?php if ($edd_options["mt_enable_mixpanel"]){ ?>
 		<!-- start Mixpanel -->
 		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
-		<!-- TODO replace above with real mixpanel key -->
-		<!-- end Mixpanel -->			
+		<!-- end Mixpanel -->
+		<?php } ?>
+
         	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
         	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
         	<p>Continue payment via payment popup window.<br>Or click button below: </p>
 	    	<button id="pay-button">Proceed to Payment</button> </center>
         	<script type="text/javascript">
+        		<?php if ($edd_options["mt_enable_mixpanel"]){ ?>
         		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
   					var eventNames = {
     					pay: 'pg-pay',
@@ -317,12 +327,13 @@ function edd_midtrans_payment($purchase_data) {
     					}
   					);
 				}
+				<?php } ?>
 				var MID_SNAP_TOKEN = "<?=$snapToken?>";
 				var MID_MERCHANT_ID = "<?=$edd_options["mt_merchant_id"];?>";
 				var MID_CMS_NAME = "easy digital downloads";
 				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>";
 				var MID_PLUGIN_NAME = "fullpayment";
-				var MID_PLUGIN_VERSION = "<?php echo MT_PLUGIN_VERSION;?>";
+				var MID_PLUGIN_VERSION = "<?php echo EDD_MIDTRANS_PLUGIN_VERSION;?>";
       		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
         		var retryCount = 0;
         		var snapExecuted = false;
@@ -337,22 +348,30 @@ function edd_midtrans_payment($purchase_data) {
         			try{
             			snap.pay(MID_SNAP_TOKEN,{
     						onSuccess: function(result){
+    						    <?php if ($edd_options["mt_enable_mixpanel"]){ ?>
       							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+      							<?php } ?>
       							window.location = result.finish_redirect_url; 
     						},
     						onPending: function(result){
-      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
-      						if(result.hasOwnProperty("pdf_url")){
-                				var PDF = "&pdf="+result.pdf_url;
-              				}
-              				else {var PDF = "";}
-      						window.location = result.finish_redirect_url + PDF;
+      						<?php if ($edd_options["mt_enable_mixpanel"]){ ?>
+	      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+	      						<?php } ?>
+	      						if(result.hasOwnProperty("pdf_url")){
+	                				var PDF = "&pdf="+result.pdf_url;
+	              				}
+	              				else {var PDF = "";}
+	      						window.location = result.finish_redirect_url + PDF;
     						},
     						onError: function(result){
-      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+    						    <?php if ($edd_options["mt_enable_mixpanel"]){ ?>
+	      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+	      						<?php } ?>
     						},
     						onClose: function(){
-      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+    						    <?php if ($edd_options["mt_enable_mixpanel"]){ ?>
+      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+	      						<?php } ?>
     						}
     					});
             			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
@@ -370,13 +389,15 @@ function edd_midtrans_payment($purchase_data) {
             			if (snapExecuted) {
               			 clearInterval(intervalFunction);
             			 // record 'pay' event to Mixpanel
-      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);	
+						 <?php if ($edd_options["mt_enable_mixpanel"]){ ?>
+      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);
+      					 <?php } ?>
            			}
           			}
         		}, 1000);
         	}
-        	</script>        
-			<?php          
+        	</script>
+			<?php
       	}
       	catch (Exception $e) {
         error_log($e->getMessage());
@@ -390,4 +411,4 @@ function edd_midtrans_payment($purchase_data) {
 		edd_send_back_to_checkout('?payment-mode=' . $purchase_data['post_data']['edd-gateway']);
 	}
 }
-add_action('edd_gateway_midtrans', 'edd_midtrans_payment');
+add_action('edd_gateway_midtrans', 'edd_midtrans_gateway_payment');

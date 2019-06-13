@@ -3,7 +3,7 @@ Contributors: yocki, rizdaprasetya
 Tags: comments, spam
 Tags: midtrans, snap, payment, payment-gateway, credit-card, commerce, e-commerce, edd, easy-digital-downloads
 Requires at least: 3.9.1
-Tested up to: 5.0.0
+Tested up to: 5.2.0
 Stable tag: 2.2.2s
 Requires PHP: 5.2.4
 License: GPLv2 or later
@@ -91,6 +91,9 @@ The best way please email to support@midtrans.com, but bugs can be reported in o
 * Add wp_create_nonce() function.
 * Make midtrans mixpanel disable by default (optional).
 * Change plugin name to edd-midtrans-gateway.
+
+= 2.3.1 =
+* Add mixpanel.
 
 == Get Help ==
 

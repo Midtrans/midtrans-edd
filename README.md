@@ -2,7 +2,10 @@ Midtrans&nbsp; Easy Digital Downloads - Wordpress Payment Gateway Module
 =====================================
 
 Midtrans&nbsp; :heart: EDD!
+
 A WordPress plugin that let your Easy-Digital-Downloads store integrated with Midtrans payment gateway.
+
+Also [Available on Wordpress plugin store](https://wordpress.org/plugins/edd-midtrans-gateway/)
 
 ### Description
 
@@ -26,14 +29,22 @@ Payment Method Feature:
 * Easy Digital Downloads 2.0 or greater
 * PHP version 5.4 or greater
 * MySQL version 5.0 or greater
+* PHP CURL enabled server/host
+
+#### Simple Installation
+1. Login to your Wordpress admin panel.
+2. Go to `Plugins` menu, click `add new`. Search for `Midtrans-Easy-Digital-Downloads` plugin.
+3. Install and follow on screen instructions.
+4. Proceed to step **5** below.
 
 #### Manual Instalation
 
 The manual installation method involves downloading our feature-rich plugin and uploading it to your webserver via your favourite FTP application..
 
-1. [Download] the plugin file to your computer and unzip it
-3. Extract the plugin, then rename the folder modules as **edd-midtrans-gateway**
-4. Using an FTP program, or your hosting control panel, upload the unzipped plugin folder to your WordPress installation `wp-content/plugins/` directory.
+1. [Download](../../archive/master.zip) the plugin file to your computer and unzip it
+2. Extract the plugin, then rename the folder modules as **edd-midtrans-gateway**
+3. Using an FTP program, or your hosting control panel, upload the unzipped plugin folder to your WordPress installation `wp-content/plugins/` directory.
+4. Install & Activate the plugin from the Plugins menu within the WordPress admin panel.
 5. Activate **Easy Digital Downloads - Midtrans Gateway** plugin from Plugin menu in your WordPress admin page.
 
 #### Midtrans MAP Configuration

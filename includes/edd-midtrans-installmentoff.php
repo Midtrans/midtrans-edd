@@ -159,21 +159,21 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // Offline Installment Procces
 function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
 	global $edd_options;
-	require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
+	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 	/**********************************
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
 		// set Sandbox credentials here
-		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_sandbox_server_key'];
+		\Midtrans\Config::$isProduction = false;
+		\Midtrans\Config::$serverKey = $edd_options['mt_offinstallment_sandbox_server_key'];
 		$client_key = $edd_options['mt_offinstallment_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
 		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";		
 	} else {
 		// set Production credentials here
-		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_offinstallment_production_server_key'];
+		\Midtrans\Config::$isProduction = true;
+		\Midtrans\Config::$serverKey = $edd_options['mt_offinstallment_production_server_key'];
 		$client_key = $edd_options['mt_offinstallment_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
 		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
@@ -228,7 +228,8 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
 		}
 
 		$edd_get_base_url = home_url( '/');
-		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );	
+		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );
+  		$finish_url = '"'.$finish_url.'&order_id="+result.order_id+"&status_code="+result.status_code+"&transaction_status="+result.transaction_status';
 
          // add bin params    
         if (strlen($edd_options['mt_offinstallment_bin_number']) > 0){
@@ -255,13 +256,10 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
         		'secure' => $edd_options['mt_offinstallment_3ds'] ? true : false,
         		'whitelist_bins' => $bins,        
     		),
-			'callbacks' => array(
-				'finish' => $finish_url,
-			),
 			'item_details' => $transaction_details
 		);
         if ($edd_options['mt_offinstallment_save_card'] && is_user_logged_in()){
-          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , Veritrans_Config::$serverKey );
+          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
           $mt_params['credit_card']['save_card'] = true;
       	}
         // add installment params with all possible amonths & banks
@@ -297,7 +295,7 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
 		edd_empty_cart();
 		// Snap Request Process
 			try{          
-				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapResponse = \Midtrans\Snap::createTransaction($mt_params);
 				$snapRedirectUrl = $snapResponse->redirect_url;
 				$snapToken = $snapResponse->token;
 			}
@@ -305,15 +303,15 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
   				echo 'Error: ' .$e->getMessage();
   				exit;
 			}
-		get_header();
 
 		if ($edd_options["mt_offinstallment_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{
-		try{
-		?>
-
+			get_header();
+			try{
+				?>
+				
 		<!-- start Mixpanel -->
 		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script>
 		<!-- end Mixpanel -->

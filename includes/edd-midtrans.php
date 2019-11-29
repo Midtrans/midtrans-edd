@@ -146,21 +146,21 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // processes the payment-mode
 function edd_midtrans_gateway_payment($purchase_data) {
 	global $edd_options;
-	// require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
+	// require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 	/**********************************
 	* set transaction mode
 	**********************************/
 	if(edd_is_test_mode()) {
 		// set Sandbox credentials here
-		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
+		\Midtrans\Config::$isProduction = false;
+		\Midtrans\Config::$serverKey = $edd_options['mt_sandbox_server_key'];
 		$client_key = $edd_options['mt_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";
 		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";
 	} else {
 		// set Production credentials here
-		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
+		\Midtrans\Config::$isProduction = true;
+		\Midtrans\Config::$serverKey = $edd_options['mt_production_server_key'];
 		$client_key = $edd_options['mt_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";
 		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
@@ -218,7 +218,9 @@ function edd_midtrans_gateway_payment($purchase_data) {
           $enable_payment = explode(',', $edd_options['mt_enabled_payment']);
         }  		
 		$edd_get_base_url = home_url( '/');
-		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );	
+		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );
+  		$finish_url = '"'.$finish_url.'&order_id="+result.order_id+"&status_code="+result.status_code+"&transaction_status="+result.transaction_status';
+
 		$mt_params = array(
 			'transaction_details' => array(
 				'order_id' 			=> $payment,
@@ -238,9 +240,6 @@ function edd_midtrans_gateway_payment($purchase_data) {
 			'credit_card' => array(
         		'secure' => $edd_options['mt_3ds'] ? true : false,
     			),
-			'callbacks' => array(
-				'finish' => $finish_url
-			),
 			'item_details' => $transaction_details
 		);
 
@@ -253,7 +252,7 @@ function edd_midtrans_gateway_payment($purchase_data) {
           );
         }					
         if ($edd_options['mt_save_card'] && is_user_logged_in()){
-          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , Veritrans_Config::$serverKey );
+          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
           $mt_params['credit_card']['save_card'] = true;          
         }
 
@@ -269,7 +268,7 @@ function edd_midtrans_gateway_payment($purchase_data) {
 		edd_empty_cart();
 		// Snap Request Process
 			try{          
-				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapResponse = \Midtrans\Snap::createTransaction($mt_params);
 				$snapRedirectUrl = $snapResponse->redirect_url;
 				$snapToken = $snapResponse->token;
 			}
@@ -277,112 +276,112 @@ function edd_midtrans_gateway_payment($purchase_data) {
   				echo 'Error: ' .$e->getMessage();
   				exit;
 			}
-		get_header();
 
 		if ($edd_options["mt_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{
-		try{
-		?>
+			get_header();
+			try{
+				?>
 
-		<!-- start Mixpanel -->
-		<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
-		<!-- end Mixpanel -->
+				<!-- start Mixpanel -->
+				<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
+				<!-- end Mixpanel -->
 
-        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
-        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
-        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
-	    	<button id="pay-button">Proceed to Payment</button> </center>
-        	<script type="text/javascript">
-        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
-  					var eventNames = {
-    					pay: 'pg-pay',
-    					success: 'pg-success',
-    					pending: 'pg-pending',
-    					error: 'pg-error',
-    					close: 'pg-close'
-  					};
-  					mixpanel.track(
-    					eventNames[status], {
-      						merchant_id: merchant_id,
-      						cms_name: cms_name,
-      						cms_version: cms_version,
-      						plugin_name: plugin_name,
-      						plugin_version: plugin_version,
-      						snap_token: snap_token,
-      						payment_type: result ? result.payment_type: null,
-      						order_id: result ? result.order_id: null,
-      						status_code: result ? result.status_code: null,
-      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
-    					}
-  					);
-				}
+	        	<script src="<?php echo $snap_script_url;?>" data-client-key="<?php echo $client_key;?>"></script>
+	        	<center><p><b><h2 class="alert alert-info">Please complete your payment...</h2></b></p>
+	        	<p>Continue payment via payment popup window.<br>Or click button below: </p>
+		    	<button id="pay-button">Proceed to Payment</button> </center>
+	        	<script type="text/javascript">
+	        		function MixpanelTrackResult(snap_token, merchant_id, cms_name, cms_version, plugin_name, plugin_version, status, result) {
+	  					var eventNames = {
+	    					pay: 'pg-pay',
+	    					success: 'pg-success',
+	    					pending: 'pg-pending',
+	    					error: 'pg-error',
+	    					close: 'pg-close'
+	  					};
+	  					mixpanel.track(
+	    					eventNames[status], {
+	      						merchant_id: merchant_id,
+	      						cms_name: cms_name,
+	      						cms_version: cms_version,
+	      						plugin_name: plugin_name,
+	      						plugin_version: plugin_version,
+	      						snap_token: snap_token,
+	      						payment_type: result ? result.payment_type: null,
+	      						order_id: result ? result.order_id: null,
+	      						status_code: result ? result.status_code: null,
+	      						gross_amount: result && result.gross_amount ? Number(result.gross_amount) : null,
+	    					}
+	  					);
+					}
 
-				var MID_SNAP_TOKEN = "<?=$snapToken?>";
-				var MID_MERCHANT_ID = "<?=$edd_options["mt_merchant_id"];?>";
-				var MID_CMS_NAME = "easy digital downloads";
-				var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>";
-				var MID_PLUGIN_NAME = "fullpayment";
-				var MID_PLUGIN_VERSION = "<?php echo EDD_MIDTRANS_PLUGIN_VERSION;?>";
-      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
-        		var retryCount = 0;
-        		var snapExecuted = false;
-        		var intervalFunction = 0;
-      			document.getElementById('pay-button').onclick = function(){
-      				popup();
-      			}	
-      			popup();
-      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
-      		function popup(){
-        		intervalFunction = setInterval(function() {
-        			try{
-            			snap.pay(MID_SNAP_TOKEN,{
-    						onSuccess: function(result){
-      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
-      							window.location = result.finish_redirect_url; 
-    						},
-    						onPending: function(result){
-	      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
-	      						if(result.hasOwnProperty("pdf_url")){
-	                				var PDF = "&pdf="+result.pdf_url;
-	              				}
-	              				else {var PDF = "";}
-	      						window.location = result.finish_redirect_url + PDF;
-    						},
-    						onError: function(result){
-	      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
-    						},
-    						onClose: function(){
-      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
-    						}
-    					});
-            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
-         			}
-          			catch (e){ 
-            			retryCount++;
-            			if(retryCount >= 10){
-              				location.reload(); 
-              				return;
-            			}
-          				console.log(e);
-          				console.log("Snap not ready yet... Retrying in 1000ms!");
-          			}
-          			finally {
-            			if (snapExecuted) {
-              			 clearInterval(intervalFunction);
-            			 // record 'pay' event to Mixpanel
-      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);
-           			}
-          			}
-        		}, 1000);
-        	}
-        	</script>
-			<?php
-      	}
-      	catch (Exception $e) {
-        error_log($e->getMessage());
-      	}
+					var MID_SNAP_TOKEN = "<?=$snapToken?>";
+					var MID_MERCHANT_ID = "<?=$edd_options["mt_merchant_id"];?>";
+					var MID_CMS_NAME = "easy digital downloads";
+					var MID_CMS_VERSION = "<?php echo EDD_VERSION;?>";
+					var MID_PLUGIN_NAME = "fullpayment";
+					var MID_PLUGIN_VERSION = "<?php echo EDD_MIDTRANS_PLUGIN_VERSION;?>";
+	      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+	        		var retryCount = 0;
+	        		var snapExecuted = false;
+	        		var intervalFunction = 0;
+	      			document.getElementById('pay-button').onclick = function(){
+	      				popup();
+	      			}	
+	      			popup();
+	      		// Continously retry to execute SNAP popup if fail, with 1000ms delay between retry
+	      		function popup(){
+	        		intervalFunction = setInterval(function() {
+	        			try{
+	            			snap.pay(MID_SNAP_TOKEN,{
+	    						onSuccess: function(result){
+	      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'success', result);
+              						window.location = <?php echo $finish_url;?>;
+	    						},
+	    						onPending: function(result){
+		      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pending', result);
+		      						if(result.hasOwnProperty("pdf_url")){
+		                				var PDF = "&pdf="+result.pdf_url;
+		              				}
+		              				else {var PDF = "";}
+						            window.location = <?php echo $finish_url;?> + PDF;
+	    						},
+	    						onError: function(result){
+		      						MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'error', result);
+	    						},
+	    						onClose: function(){
+	      							MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'close', null);
+	    						}
+	    					});
+	            			snapExecuted = true; // if SNAP popup executed, change flag to stop the retry.
+	         			}
+	          			catch (e){ 
+	            			retryCount++;
+	            			if(retryCount >= 10){
+	              				location.reload(); 
+	              				return;
+	            			}
+	          				console.log(e);
+	          				console.log("Snap not ready yet... Retrying in 1000ms!");
+	          			}
+	          			finally {
+	            			if (snapExecuted) {
+	              			 clearInterval(intervalFunction);
+	            			 // record 'pay' event to Mixpanel
+	      					 MixpanelTrackResult(MID_SNAP_TOKEN, MID_MERCHANT_ID, MID_CMS_NAME, MID_CMS_VERSION, MID_PLUGIN_NAME, MID_PLUGIN_VERSION, 'pay', null);
+	           			}
+	          			}
+	        		}, 1000);
+	        	}
+	        	</script>
+				<?php
+	      	}
+	      	catch (Exception $e) {
+	        error_log($e->getMessage());
+	      	}
       	} 
 		get_footer();
 	}

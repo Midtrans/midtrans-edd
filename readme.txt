@@ -95,6 +95,10 @@ The best way please email to support@midtrans.com, but bugs can be reported in o
 = 2.3.1 =
 * Add mixpanel.
 
+= 2.4.0 =
+* Update veritrans lib to midtrans lib.
+* Update the snap redirection.
+
 == Get Help ==
 
 *	[Midtrans registration](https://account.midtrans.com/register)

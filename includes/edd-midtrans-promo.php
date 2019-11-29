@@ -150,19 +150,19 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // promo procces
 function edd_midtrans_gateway_promo_payment($purchase_data) {
 	global $edd_options;
-	// require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
+	// require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 
 	if(edd_is_test_mode()) {
 		// set Sandbox credentials here
-		Veritrans_Config::$isProduction = false;
-		Veritrans_Config::$serverKey = $edd_options['mt_promo_sandbox_server_key'];
+		\Midtrans\Config::$isProduction = false;
+		\Midtrans\Config::$serverKey = $edd_options['mt_promo_sandbox_server_key'];
 		$client_key = $edd_options['mt_promo_sandbox_client_key'];
 		$snap_script_url = "https://app.sandbox.midtrans.com/snap/snap.js";		
 		$mixpanel_key = "9dcba9b440c831d517e8ff1beff40bd9";		
 	} else {
 		// set Production credentials here
-		Veritrans_Config::$isProduction = true;
-		Veritrans_Config::$serverKey = $edd_options['mt_promo_production_server_key'];
+		\Midtrans\Config::$isProduction = true;
+		\Midtrans\Config::$serverKey = $edd_options['mt_promo_production_server_key'];
 		$client_key = $edd_options['mt_promo_production_client_key'];
 		$snap_script_url = "https://app.midtrans.com/snap/snap.js";		
 		$mixpanel_key = "17253088ed3a39b1e2bd2cbcfeca939a";
@@ -245,13 +245,10 @@ function edd_midtrans_gateway_promo_payment($purchase_data) {
 				'required' => false,
 				'whitelist_bins' => $bins,				
     		),
-			'callbacks' => array(
-				'finish' => $finish_url,
-			),
 			'item_details' => $transaction_details,
 		);
         if ($edd_options["mt_promo_save_card"] && is_user_logged_in()){
-          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , Veritrans_Config::$serverKey );
+          $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
         }
 		if ($edd_options['mt_promo_save_card']){
       	  $mt_params['credit_card']['save_card'] = true;
@@ -278,7 +275,7 @@ function edd_midtrans_gateway_promo_payment($purchase_data) {
 		edd_empty_cart();
 		// Snap Request Process
 			try{          
-				$snapResponse = Veritrans_Snap::createTransaction($mt_params);
+				$snapResponse = \Midtrans\Snap::createTransaction($mt_params);
 				$snapRedirectUrl = $snapResponse->redirect_url;
 				$snapToken = $snapResponse->token;
 			}

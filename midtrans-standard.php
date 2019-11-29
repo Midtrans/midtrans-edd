@@ -3,7 +3,7 @@
 Plugin Name: Easy Digital Downloads - Midtrans Gateway
 Plugin URI: https://github.com/Midtrans/midtrans-edd
 Description: Accept all payment directly on your Easy Digital Downloads site in a seamless and secure checkout environment with <a href="https://midtrans.com" target="_blank">Midtrans.com</a>
-Version: 2.3.1
+Version: 2.4.0
 Author: Midtrans
 Author URI: https://midtrans.com
 
@@ -28,7 +28,7 @@ include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installment.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installmentoff.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
-require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
+require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 
 #To add currency Rp and IDR
 #
@@ -44,17 +44,17 @@ add_filter( 'edd_currencies', 'midtrans_gateway_rupiah_currencies');
 // to get notification from veritrans
 function edd_midtrans_notification(){
 	global $edd_options;
-	require_once plugin_dir_path( __FILE__ ) . '/lib/Veritrans.php';
+	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 	if(edd_is_test_mode()){
 		// set Sandbox credentials here
-		Veritrans_Config::$serverKey = $edd_options['mt_sandbox_server_key'];
-		Veritrans_Config::$isProduction = false;
+		\Midtrans\Config::$serverKey = $edd_options['mt_sandbox_server_key'];
+		\Midtrans\Config::$isProduction = false;
 	}else {
 		// set Production credentials here
-		Veritrans_Config::$serverKey = $edd_options['mt_production_server_key'];
-		Veritrans_Config::$isProduction = true;
+		\Midtrans\Config::$serverKey = $edd_options['mt_production_server_key'];
+		\Midtrans\Config::$isProduction = true;
 	}
-	$notif = new Veritrans_Notification();
+	$notif = new \Midtrans\Notification();
 	$transaction = $notif->transaction_status;
 	$fraud = $notif->fraud_status;
 	$order_id = $notif->order_id;
@@ -94,9 +94,8 @@ add_action( 'edd_midtrans_notification', 'edd_midtrans_notification' );
 
 function edd_listen_for_midtrans_notification() {
 	global $edd_options;
-	// check if payment url http://site.com/?edd-listener=veritrans
+	// check if payment url http://site.com/?edd-listener=midtrans
 	if ( isset( $_GET['edd-listener'] ) && $_GET['edd-listener'] == 'midtrans' ) {
-		// error_log('masuk edd_listen_for_veritrans_notification, '.$_GET['edd-listener']); //debugan
 		do_action( 'edd_midtrans_notification' );
 	}
 
@@ -119,6 +118,19 @@ function edd_listen_for_midtrans_notification() {
 				else{
 					$_SESSION['pdf'] = "";
 				}				
+ 				edd_send_to_success_page();
+ 			}	
+ 		}	
+	}
+
+	else if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans') {
+		$order = $_REQUEST['order_id'];
+		$status = $_REQUEST['transaction_status'];
+		if (isset( $_GET['edd-listener'])){
+			edd_send_to_success_page();
+		}
+		else{
+			if ($status == 'capture' || $status == 'pending'){
  				edd_send_to_success_page();
  			}	
  		}	

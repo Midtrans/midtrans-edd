@@ -6,7 +6,7 @@ Midtrans&nbsp; :heart: EDD!
 A WordPress plugin that let your Easy-Digital-Downloads store integrated with Midtrans payment gateway.
 
 Also [Available on Wordpress plugin store](https://wordpress.org/plugins/edd-midtrans-gateway/)
-
+https://docs.midtrans.com/en/reference/test.html
 ### Description
 
 Midtrans payment gateway is an online payment gateway that is highly concerned with customer experience (UX). They strive to make payments simple for both the merchant and customers. With this plugin you can make your Easy Digital Downloads store integrated with Midtrans payment gateway.

@@ -18,17 +18,21 @@ DEFINE ('EDD_MIDTRANS_PLUGIN_VERSION', get_file_data(__FILE__, array('Version' =
 |--------------------------------------------------------------------------
 */
 define( 'EDDMIDTRANS_DIR', plugin_dir_path( __FILE__ ) );
-
+define('EDDMIDTRANS_FILE', __FILE__);
+define('EDDMIDTRANS_PLUGIN', __FILE__);
+define('EDDMIDTRANS_PLUGIN_BASE', plugin_basename(__FILE__));
+define('EDDMIDTRANS_PLUGIN_PATH', trailingslashit(plugin_dir_path(__FILE__)));
+define('EDDMIDTRANS_FILE_FOLDER',basename(plugin_dir_path(__FILE__)));
 /*
 |--------------------------------------------------------------------------
 | INCLUDES
 |--------------------------------------------------------------------------
 */
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans.php' );
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installment.php' );
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installmentoff.php' );
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
-require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+include_once( EDDMIDTRANS_PLUGIN_PATH . 'includes/edd-midtrans.php' );
+include_once( EDDMIDTRANS_PLUGIN_PATH . 'includes/edd-midtrans-installment.php' );
+include_once( EDDMIDTRANS_PLUGIN_PATH . 'includes/edd-midtrans-installmentoff.php' );
+include_once( EDDMIDTRANS_PLUGIN_PATH . 'includes/edd-midtrans-promo.php' );
+require_once EDDMIDTRANS_PLUGIN_PATH . 'lib/Midtrans.php';
 
 #To add currency Rp and IDR
 #
@@ -36,7 +40,7 @@ function midtrans_gateway_rupiah_currencies( $currencies ) {
 	if(!array_key_exists('Rp', $currencies)){
 		$currencies['Rp'] = __('Indonesian Rupiah ( Rp )', 'edd-midtrans');
 	}
-	return $currencies;	
+	return $currencies;
 }
 add_filter( 'edd_currencies', 'midtrans_gateway_rupiah_currencies');
 
@@ -58,25 +62,25 @@ function edd_midtrans_notification(){
 	$transaction = $notif->transaction_status;
 	$fraud = $notif->fraud_status;
 	$order_id = $notif->order_id;
-	
+
 	if ($transaction == 'capture') {
 		if ($fraud == 'challenge') {
-			edd_insert_payment_note( $order_id, __( 'Midtrans Challenged Payment', 'edd-midtrans' ) );			
+			edd_insert_payment_note( $order_id, __( 'Midtrans Challenged Payment', 'edd-midtrans' ) );
 			edd_update_payment_status($order_id, 'pending');
 		}
 		else if ($fraud == 'accept') {
-			edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );			
+			edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );
 		 	edd_update_payment_status($order_id, 'complete');
 		}
 	}
 	else if ($notif->transaction_status != 'credit_card' && $transaction == 'settlement') {
-		edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );		
+		edd_insert_payment_note( $order_id, __( 'Midtrans Payment Completed', 'edd-midtrans' ) );
 		edd_update_payment_status($order_id, 'complete');
 	}
 	else if ($transaction == 'pending') {
 		edd_insert_payment_note( $order_id, __( 'Midtrans Awaiting Payment', 'edd-midtrans' ) );
 		edd_update_payment_status($order_id, 'pending');
-	}	
+	}
 	else if ($transaction == 'cancel') {
 		edd_insert_payment_note( $order_id, __( 'Midtrans Cancelled Payment', 'edd-midtrans' ) );
 		edd_update_payment_status($order_id, 'failed');
@@ -113,14 +117,14 @@ function edd_listen_for_midtrans_notification() {
  			else if ($status == 'pending'){
 				if ($_REQUEST['pdf']){
 				$_SESSION['pdf'] = $_REQUEST['pdf'];
-				error_log('pdf nih' .  $_SESSION['pdf']);	
+				error_log('pdf nih' .  $_SESSION['pdf']);
 				}
 				else{
 					$_SESSION['pdf'] = "";
-				}				
+				}
  				edd_send_to_success_page();
- 			}	
- 		}	
+ 			}
+ 		}
 	}
 
 	else if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans') {
@@ -132,8 +136,8 @@ function edd_listen_for_midtrans_notification() {
 		else{
 			if ($status == 'capture' || $status == 'pending'){
  				edd_send_to_success_page();
- 			}	
- 		}	
+ 			}
+ 		}
 	}
 }
 add_action( 'init', 'edd_listen_for_midtrans_notification' );
@@ -235,13 +239,14 @@ function mid_edd_email_tag_phone( $payment_id ) {
 function edd_midtrans_page_content( $content ) {
 	// Check if we're on the success page
 	if (edd_is_success_page()) {
-		if ($_SESSION['pdf']){
+		if (isset($_SESSION['pdf'])){
     		$message  = '<div class="edd-midtrans">';
     		$message .= '<h3>Payment Instruction</h3>';
     		$message .= '<p><a href="' . $_SESSION['pdf'] . '" target="_blank">' . $_SESSION['pdf'] . '</a></p>' ;
    			$message .= '</div>';
-			if (has_filter('edd_payment_confirm_' . $_GET['payment-confirmation'])) {
-            	$content = apply_filters('edd_payment_confirm_' . $_GET['payment-confirmation'], $content);
+   			$payment_confirmation = isset( $_REQUEST['payment-confirmation']) ?  $_REQUEST['payment-confirmation'] : '';
+			if (has_filter('edd_payment_confirm_' . $payment_confirmation)) {
+            	$content = apply_filters('edd_payment_confirm_' . $payment_confirmation, $content);
         	}
         	$_SESSION['pdf'] = "";
 			return $content . $message;

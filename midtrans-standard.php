@@ -146,7 +146,7 @@ function mid_edd_display_checkout_fields() {
     <p id="edd-phone-wrap">
         <label class="edd-label" for="edd-phone">Phone Number</label>
         <span class="edd-description">
-        	Enter your phone number so we can get in touch with you.
+        	Please input your phone number.
         </span>
         <input class="edd-input" type="text" name="edd_phone" id="edd-phone" placeholder="Phone Number" />
     </p>

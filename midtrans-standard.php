@@ -27,7 +27,7 @@ define( 'EDDMIDTRANS_DIR', plugin_dir_path( __FILE__ ) );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installment.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installmentoff.php' );
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
+// include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
 if(!class_exists("Midtrans\Config")){
 	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
 }

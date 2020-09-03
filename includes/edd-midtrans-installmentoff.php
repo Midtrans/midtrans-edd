@@ -274,12 +274,12 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
     		),
 			'item_details' => $transaction_details
 		);
-        if ($edd_options['mt_offinstallment_save_card'] && is_user_logged_in()){
+        if ( isset($edd_options['mt_offinstallment_save_card']) && $edd_options['mt_offinstallment_save_card'] && is_user_logged_in()){
           $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
           $mt_params['credit_card']['save_card'] = true;
       	}
         // add installment params with all possible amonths & banks
-        if($params['transaction_details']['gross_amount'] >= $edd_options['mt_offinstallment_min_amount'])
+        if((int)$params['transaction_details']['gross_amount'] >= (int)$edd_options['mt_offinstallment_min_amount'])
         {
           // Build bank & terms array
           $termsStr = explode(',', $edd_options["mt_offinstallment_installment_term"]);
@@ -301,7 +301,9 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
         }
 
         // add custom fields params
-        $custom_fields_params = explode(",",$edd_options["mt_offinstallment_custom_field"]);
+        $custom_fields_params = isset($edd_options["mt_offinstallment_custom_field"]) ? 
+        	explode(",",$edd_options["mt_offinstallment_custom_field"]) :
+        	[];
         if ( !empty($custom_fields_params[0]) ){
           $mt_params['custom_field1'] = $custom_fields_params[0];
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
@@ -320,7 +322,7 @@ function edd_midtrans_gateway_offinstallment_payment($purchase_data) {
   				exit;
 			}
 
-		if ($edd_options["mt_offinstallment_enable_redirect"]){
+		if ( isset($edd_options["mt_offinstallment_enable_redirect"]) && $edd_options["mt_offinstallment_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{

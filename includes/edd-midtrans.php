@@ -227,10 +227,6 @@ function edd_midtrans_gateway_payment($purchase_data) {
 				array_push($transaction_details, $mt_fee);
 			};
 		}
-
-        if (strlen($edd_options['mt_enabled_payment']) > 0){
-          $enable_payment = explode(',', $edd_options['mt_enabled_payment']);
-        }  		
 		$edd_get_base_url = home_url( '/');
 		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );
   		$finish_url = '"'.$finish_url.'&order_id="+result.order_id+"&status_code="+result.status_code+"&transaction_status="+result.transaction_status';
@@ -249,29 +245,37 @@ function edd_midtrans_gateway_payment($purchase_data) {
 					'first_name' 		=> $purchase_data['user_info']['first_name'],
 					'last_name' 		=> $purchase_data['user_info']['last_name'],
 					),
-				),
-			'enabled_payments' => $enable_payment,			
+				),	
 			'credit_card' => array(
         		'secure' => $edd_options['mt_3ds'] ? true : false,
     			),
 			'item_details' => $transaction_details
 		);
 
+		// set enabled payments
+        if ( isset($edd_options['mt_enabled_payment']) && strlen($edd_options['mt_enabled_payment']) > 0){
+          $mt_params['enabled_payments'] = explode(',', $edd_options['mt_enabled_payment']);
+        }
+
 		//set custom expiry
-        $custom_expiry_params = explode(" ",$edd_options['mt_custom_expiry']);
+        $custom_expiry_params = isset($edd_options['mt_custom_expiry']) ? 
+        	explode(" ",$edd_options['mt_custom_expiry']) : 
+        	[];
         if ( !empty($custom_expiry_params[1]) && !empty($custom_expiry_params[0]) ){
           $mt_params['expiry'] = array(
             'unit' => $custom_expiry_params[1], 
             'duration'  => (int)$custom_expiry_params[0],
           );
         }					
-        if ($edd_options['mt_save_card'] && is_user_logged_in()){
+        if ( isset($edd_options['mt_save_card']) && $edd_options['mt_save_card'] && is_user_logged_in()){
           $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
           $mt_params['credit_card']['save_card'] = true;          
         }
 
         // add custom fields params
-        $custom_fields_params = explode(",",$edd_options["mt_custom_field"]);
+        $custom_fields_params = isset($edd_options['mt_custom_field']) ? 
+        	explode(",",$edd_options["mt_custom_field"]) :
+        	[];
         if ( !empty($custom_fields_params[0]) ){
           $mt_params['custom_field1'] = $custom_fields_params[0];
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
@@ -291,7 +295,7 @@ function edd_midtrans_gateway_payment($purchase_data) {
   				exit;
 			}
 
-		if ($edd_options["mt_enable_redirect"]){
+		if ( isset($edd_options['mt_enable_redirect']) && $edd_options["mt_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{

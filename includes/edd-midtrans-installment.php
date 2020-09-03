@@ -55,66 +55,77 @@ function edd_midtrans_gateway_installment_add_settings($settings) {
 			'name' => __('Checkout Label Installment', 'edd-midtrans'),
 			'desc' => __('<br>Payment gateway text label that will be shown as payment options to your customers (Default = "Credit Card Installment via Midtrans")', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => 'Credit Card Installment via Midtrans',
 		),
 		array(
 			'id' => 'mt_installment_merchant_id',
 			'name' => __('Merchant ID', 'edd-midtrans'),
-			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345, or G0012345). Get the ID <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),			
 		array(
 			'id' => 'mt_installment_production_server_key',
 			'name' => __('Production Server Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$production_key_url),
 			'type' => 'text',
+			'default' => '',
 		),
 		array(
 			'id' => 'mt_installment_production_client_key',
 			'name' => __('Production Client Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$production_key_url),
 			'type' => 'text',
+			'default' => '',
 		),		
 		array(
 			'id' => 'mt_installment_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),
 		array(
 			'id' => 'mt_installment_sandbox_client_key',
 			'name' => __('Sandbox Client Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),		
 		array(
 			'id' => 'mt_installment_min_amount',
 			'name' => __('Minimal Transaction Amount', 'edd-midtrans'),
 			'desc' => __('<br>Minimal transaction amount allowed to be paid with installment. (amount in IDR, without comma or period) example: 500000 </br> if the transaction amount is below this value, customer will be redirected to Credit Card fullpayment page', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => '500000',
 		),	
 		array(
 			'id' => 'mt_installment_3ds',
 			'name' => __('Enable 3D Secure', 'edd-midtrans'),
 			'desc' => __('You must enable 3D Secure. Please contact us if you wish to disable this feature in the Production environment.', 'edd-midtrans'),
 			'type' => 'checkbox',
+			'default' => 'yes',
 		),
 		array(
 			'id' => 'mt_installment_save_card',
 			'name' => __('Enable Save Card', 'edd-midtrans'),
 			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase', 'edd-midtrans'),
 			'type' => 'checkbox',
+			'default' => 'no',
 		),	
 		array(
 			'id' => 'mt_installment_enable_redirect',
 			'name' => __('Enable Payment Page Redirection', 'edd-midtrans'),
 			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>', 'edd-midtrans'),
 			'type' => 'checkbox',	
+			'default' => 'no',
 		),
 		array(
 			'id' => 'mt_installment_custom_field',
 			'name' => __('Custom fields', 'edd-midtrans'),
 			'desc' => __('<br>This will allow you to set custom fields that will be displayed on Midtrans dashboard. <br>Up to 3 fields are available, separate by coma (,) <br> Example:  Order from web, Processed', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => '',
 		),				
 	);
     if ( version_compare( EDD_VERSION, 2.5, '>=' ) ) {
@@ -138,7 +149,9 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // installment procces
 function edd_midtrans_gateway_installment_payment($purchase_data) {
 	global $edd_options;
-	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	if(!class_exists("Midtrans\Config")){
+		require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	}
 	/**********************************
 	* set transaction mode
 	**********************************/
@@ -231,13 +244,11 @@ function edd_midtrans_gateway_installment_payment($purchase_data) {
     		),
 			'item_details' => $transaction_details
 		);
-        if ($edd_options['mt_installment_save_card'] && is_user_logged_in()){
+        if ( isset($edd_options['mt_installment_save_card']) && $edd_options['mt_installment_save_card'] && is_user_logged_in()){
           $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
-        }
-    	if ($edd_options['mt_installment_save_card']){
           $mt_params['credit_card']['save_card'] = true;
-      	}          
-        if($mt_params['transaction_details']['gross_amount'] >= $edd_options['mt_installment_min_amount'])
+        }       
+        if((int)$mt_params['transaction_details']['gross_amount'] >= (int)$edd_options['mt_installment_min_amount'])
         {
           $terms      = array(3,6,9,12,15,18,21,24,27,30,33,36);
           $mt_params['credit_card']['installment']['required'] = true;
@@ -252,7 +263,9 @@ function edd_midtrans_gateway_installment_payment($purchase_data) {
             );
         }
         // add custom fields params
-        $custom_fields_params = explode(",",$edd_options["mt_installment_custom_field"]);
+        $custom_fields_params = isset($edd_options["mt_installment_custom_field"]) ? 
+        	explode(",",$edd_options["mt_installment_custom_field"]) :
+        	[];
         if ( !empty($custom_fields_params[0]) ){
           $mt_params['custom_field1'] = $custom_fields_params[0];
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
@@ -271,7 +284,7 @@ function edd_midtrans_gateway_installment_payment($purchase_data) {
   				exit;
 			}
 
-		if ($edd_options["mt_installment_enable_redirect"]){
+		if (isset($edd_options["mt_installment_enable_redirect"]) && $edd_options["mt_installment_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{

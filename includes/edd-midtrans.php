@@ -57,73 +57,85 @@ function edd_midtrans_gateway_add_settings($settings) {
 			'name' => __('Checkout Label', 'edd-midtrans'),
 			'desc' => __('<br>Payment gateway text label that will be shown as payment options to your customers (Default = "Online Payment via Midtrans")', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => 'Online Payment via Midtrans',
 		),
 		array(
 			'id' => 'mt_merchant_id',
 			'name' => __('Merchant ID', 'edd-midtrans'),
-			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345). Get the ID <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
+			'desc' => sprintf(__('<br>Input your Midtrans Merchant ID (e.g M012345, or G0012345). Get the ID <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),		
 		array(
 			'id' => 'mt_production_server_key',
 			'name' => __('Production Server Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$production_key_url),
 			'type' => 'text',
+			'default' => '',
 		),
 		array(
 			'id' => 'mt_production_client_key',
 			'name' => __('Production Client Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Production Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$production_key_url),
 			'type' => 'text',
+			'default' => '',
 		),		
 		array(
 			'id' => 'mt_sandbox_server_key',
 			'name' => __('Sandbox Server Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Server Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),
 		array(
 			'id' => 'mt_sandbox_client_key',
 			'name' => __('Sandbox Client Key', 'edd-midtrans'),
 			'desc' => sprintf(__('<br>Input your <b>Sandbox Midtrans Client Key</b>. Get the key <a href="%s" target="_blank">here</a>', 'edd-midtrans' ),$sandbox_key_url),
 			'type' => 'text',
+			'default' => '',
 		),		
 		array(
 			'id' => 'mt_3ds',
 			'name' => __('Enable 3D Secure', 'edd-midtrans'),
 			'desc' => __('You must enable 3D Secure. Please contact us if you wish to disable this feature in the Production environment.', 'edd-midtrans'),
 			'type' => 'checkbox',
+			'default' => 'yes',
 		),
 		array(
 			'id' => 'mt_save_card',
 			'name' => __('Enable Save Card', 'edd-midtrans'),
 			'desc' => __('This will allow your customer to save their card on the payment popup, for faster payment flow on the following purchase', 'edd-midtrans'),
 			'type' => 'checkbox',
+			'default' => 'no',
 		),
 		array(
 			'id' => 'mt_enable_redirect',
 			'name' => __('Enable Payment Page Redirection', 'edd-midtrans'),
 			'desc' => __('This will redirect customer to Midtrans hosted payment page instead of popup payment page on your website. <br> <b>Leave it disabled if you are not sure</b>', 'edd-midtrans'),
 			'type' => 'checkbox',	
+			'default' => 'no',
 		),
 		array(
 			'id' => 'mt_enabled_payment',
 			'name' => __('Allowed Payment Method', 'edd-midtrans'),
 			'desc' => __('<br>Customize allowed payment method, separate payment method code with coma. e.g: bank_transfer,credit_card.<br> <b>Leave it default if you are not sure</b>', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => '',
 		),					
 		array(
 			'id' => 'mt_custom_expiry',
 			'name' => __('Custom Expiry', 'edd-midtrans'),
 			'desc' => __('<br>This will allow you to set custom duration on how long the transaction available to be paid.<br> example: 45 minutes', 'edd-midtrans'),
 			'type' => 'text',
+			'default' => '',
 		),
 		array(
 			'id' => 'mt_custom_field',
 			'name' => __('Custom fields', 'edd-midtrans'),
 			'desc' => __('<br>This will allow you to set custom fields that will be displayed on Midtrans dashboard. <br>Up to 3 fields are available, separate by coma (,) <br> Example:  Order from web, Processed', 'edd-midtrans'),
 			'type' => 'text',
-		),				
+			'default' => '',
+		),
 	);
     if ( version_compare( EDD_VERSION, 2.5, '>=' ) ) {
         $midtrans_settings = array( 'midtrans' => $midtrans_settings );
@@ -146,7 +158,9 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // processes the payment-mode
 function edd_midtrans_gateway_payment($purchase_data) {
 	global $edd_options;
-	// require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	if(!class_exists("Midtrans\Config")){
+		require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	}
 	/**********************************
 	* set transaction mode
 	**********************************/
@@ -213,10 +227,6 @@ function edd_midtrans_gateway_payment($purchase_data) {
 				array_push($transaction_details, $mt_fee);
 			};
 		}
-
-        if (strlen($edd_options['mt_enabled_payment']) > 0){
-          $enable_payment = explode(',', $edd_options['mt_enabled_payment']);
-        }  		
 		$edd_get_base_url = home_url( '/');
 		$finish_url = esc_url_raw( add_query_arg( array( 'confirmation_page' => 'midtrans','nonce'  => wp_create_nonce('edd_midtrans_gateway' . $payment) ), home_url( 'index.php' ) ) );
   		$finish_url = '"'.$finish_url.'&order_id="+result.order_id+"&status_code="+result.status_code+"&transaction_status="+result.transaction_status';
@@ -235,29 +245,37 @@ function edd_midtrans_gateway_payment($purchase_data) {
 					'first_name' 		=> $purchase_data['user_info']['first_name'],
 					'last_name' 		=> $purchase_data['user_info']['last_name'],
 					),
-				),
-			'enabled_payments' => $enable_payment,			
+				),	
 			'credit_card' => array(
         		'secure' => $edd_options['mt_3ds'] ? true : false,
     			),
 			'item_details' => $transaction_details
 		);
 
+		// set enabled payments
+        if ( isset($edd_options['mt_enabled_payment']) && strlen($edd_options['mt_enabled_payment']) > 0){
+          $mt_params['enabled_payments'] = explode(',', $edd_options['mt_enabled_payment']);
+        }
+
 		//set custom expiry
-        $custom_expiry_params = explode(" ",$edd_options['mt_custom_expiry']);
+        $custom_expiry_params = isset($edd_options['mt_custom_expiry']) ? 
+        	explode(" ",$edd_options['mt_custom_expiry']) : 
+        	[];
         if ( !empty($custom_expiry_params[1]) && !empty($custom_expiry_params[0]) ){
           $mt_params['expiry'] = array(
             'unit' => $custom_expiry_params[1], 
             'duration'  => (int)$custom_expiry_params[0],
           );
         }					
-        if ($edd_options['mt_save_card'] && is_user_logged_in()){
+        if ( isset($edd_options['mt_save_card']) && $edd_options['mt_save_card'] && is_user_logged_in()){
           $mt_params['user_id'] = crypt( $purchase_data['user_info']['email'].$purchase_data['post_data']['edd_phone'] , \Midtrans\Config::$serverKey );
           $mt_params['credit_card']['save_card'] = true;          
         }
 
         // add custom fields params
-        $custom_fields_params = explode(",",$edd_options["mt_custom_field"]);
+        $custom_fields_params = isset($edd_options['mt_custom_field']) ? 
+        	explode(",",$edd_options["mt_custom_field"]) :
+        	[];
         if ( !empty($custom_fields_params[0]) ){
           $mt_params['custom_field1'] = $custom_fields_params[0];
           $mt_params['custom_field2'] = !empty($custom_fields_params[1]) ? $custom_fields_params[1] : null;
@@ -277,7 +295,7 @@ function edd_midtrans_gateway_payment($purchase_data) {
   				exit;
 			}
 
-		if ($edd_options["mt_enable_redirect"]){
+		if ( isset($edd_options['mt_enable_redirect']) && $edd_options["mt_enable_redirect"]){
 			wp_redirect($snapRedirectUrl);
 		}
 		else{
@@ -285,6 +303,8 @@ function edd_midtrans_gateway_payment($purchase_data) {
 			try{
 				?>
 
+	<div>
+	    <main id="main" class="site-main" role="main">
 				<!-- start Mixpanel -->
 				<script type="text/javascript">(function(c,a){if(!a.__SV){var b=window;try{var d,m,j,k=b.location,f=k.hash;d=function(a,b){return(m=a.match(RegExp(b+"=([^&]*)")))?m[1]:null};f&&d(f,"state")&&(j=JSON.parse(decodeURIComponent(d(f,"state"))),"mpeditor"===j.action&&(b.sessionStorage.setItem("_mpcehash",f),history.replaceState(j.desiredHash||"",c.title,k.pathname+k.search)))}catch(n){}var l,h;window.mixpanel=a;a._i=[];a.init=function(b,d,g){function c(b,i){var a=i.split(".");2==a.length&&(b=b[a[0]],i=a[1]);b[i]=function(){b.push([i].concat(Array.prototype.slice.call(arguments,0)))}}var e=a;"undefined"!==typeof g?e=a[g]=[]:g="mixpanel";e.people=e.people||[];e.toString=function(b){var a="mixpanel";"mixpanel"!==g&&(a+="."+g);b||(a+=" (stub)");return a};e.people.toString=function(){return e.toString(1)+".people (stub)"};l="disable time_event track track_pageview track_links track_forms track_with_groups add_group set_group remove_group register register_once alias unregister identify name_tag set_config reset opt_in_tracking opt_out_tracking has_opted_in_tracking has_opted_out_tracking clear_opt_in_out_tracking people.set people.set_once people.unset people.increment people.append people.union people.track_charge people.clear_charges people.delete_user people.remove".split(" ");for(h=0;h<l.length;h++)c(e,l[h]);var f="set set_once union unset remove delete".split(" ");e.get_group=function(){function a(c){b[c]=function(){call2_args=arguments;call2=[c].concat(Array.prototype.slice.call(call2_args,0));e.push([d,call2])}}for(var b={},d=["get_group"].concat(Array.prototype.slice.call(arguments,0)),c=0;c<f.length;c++)a(f[c]);return b};a._i.push([b,d,g])};a.__SV=1.2;b=c.createElement("script");b.type="text/javascript";b.async=!0;b.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"file:"===c.location.protocol&&"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js".match(/^\/\//)?"https://cdn.mxpnl.com/libs/mixpanel-2-latest.min.js":"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";d=c.getElementsByTagName("script")[0];d.parentNode.insertBefore(b,d)}})(document,window.mixpanel||[]);mixpanel.init("<?php echo $mixpanel_key ?>");</script> 
 				<!-- end Mixpanel -->
@@ -377,6 +397,8 @@ function edd_midtrans_gateway_payment($purchase_data) {
 	        		}, 1000);
 	        	}
 	        	</script>
+	        </main>
+        </div>
 				<?php
 	      	}
 	      	catch (Exception $e) {

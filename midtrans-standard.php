@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Easy Digital Downloads - Midtrans Gateway
+Plugin Name: Midtrans Payment Gateway for Easy Digital Downloads 
 Plugin URI: https://github.com/Midtrans/midtrans-edd
-Description: Accept all payment directly on your Easy Digital Downloads site in a seamless and secure checkout environment with <a href="https://midtrans.com" target="_blank">Midtrans.com</a>
-Version: 2.4.0
+Description: Accept various payment methods directly on your Easy Digital Downloads site in a seamless and secure checkout environment with <a href="https://midtrans.com" target="_blank">Midtrans.com</a>
+Version: 2.5.0
 Author: Midtrans
 Author URI: https://midtrans.com
 
@@ -27,8 +27,10 @@ define( 'EDDMIDTRANS_DIR', plugin_dir_path( __FILE__ ) );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installment.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installmentoff.php' );
-include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
-require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+// include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
+if(!class_exists("Midtrans\Config")){
+	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+}
 
 #To add currency Rp and IDR
 #
@@ -44,7 +46,9 @@ add_filter( 'edd_currencies', 'midtrans_gateway_rupiah_currencies');
 // to get notification from veritrans
 function edd_midtrans_notification(){
 	global $edd_options;
-	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	if(!class_exists("Midtrans\Config")){
+		require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	}
 	if(edd_is_test_mode()){
 		// set Sandbox credentials here
 		\Midtrans\Config::$serverKey = $edd_options['mt_sandbox_server_key'];
@@ -95,13 +99,13 @@ add_action( 'edd_midtrans_notification', 'edd_midtrans_notification' );
 function edd_listen_for_midtrans_notification() {
 	global $edd_options;
 	// check if payment url http://site.com/?edd-listener=midtrans
-	if ( isset( $_GET['edd-listener'] ) && $_GET['edd-listener'] == 'midtrans' ) {
+	if ( isset( $_GET['edd-listener'] ) && sanitize_text_field($_GET['edd-listener']) == 'midtrans' ) {
 		do_action( 'edd_midtrans_notification' );
 	}
 
-	if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans'  && wp_verify_nonce($_GET['nonce'], 'edd_midtrans_gateway' . $_REQUEST['order_id'] )) {
-		$order = $_REQUEST['order_id'];
-		$status = $_REQUEST['transaction_status'];
+	if ( isset( $_GET['confirmation_page'] ) && sanitize_text_field($_GET['confirmation_page']) == 'midtrans'  && wp_verify_nonce(sanitize_text_field($_GET['nonce']), 'edd_midtrans_gateway' . sanitize_text_field($_REQUEST['order_id']) )) {
+		$order = sanitize_text_field($_REQUEST['order_id']);
+		$status = sanitize_text_field($_REQUEST['transaction_status']);
 		if (isset( $_GET['edd-listener'])){
 			edd_send_to_success_page();
 		}
@@ -111,9 +115,8 @@ function edd_listen_for_midtrans_notification() {
  				edd_send_to_success_page();
  			}
  			else if ($status == 'pending'){
-				if ($_REQUEST['pdf']){
-				$_SESSION['pdf'] = $_REQUEST['pdf'];
-				error_log('pdf nih' .  $_SESSION['pdf']);	
+				if (isset($_REQUEST['pdf'])){
+					$_SESSION['pdf'] = sanitize_text_field($_REQUEST['pdf']);
 				}
 				else{
 					$_SESSION['pdf'] = "";
@@ -123,9 +126,9 @@ function edd_listen_for_midtrans_notification() {
  		}	
 	}
 
-	else if ( isset( $_GET['confirmation_page'] ) && $_GET['confirmation_page'] == 'midtrans') {
-		$order = $_REQUEST['order_id'];
-		$status = $_REQUEST['transaction_status'];
+	else if ( isset( $_GET['confirmation_page'] ) && sanitize_text_field($_GET['confirmation_page']) == 'midtrans') {
+		$order = sanitize_text_field($_REQUEST['order_id']);
+		$status = sanitize_text_field($_REQUEST['transaction_status']);
 		if (isset( $_GET['edd-listener'])){
 			edd_send_to_success_page();
 		}
@@ -143,7 +146,7 @@ function mid_edd_display_checkout_fields() {
     <p id="edd-phone-wrap">
         <label class="edd-label" for="edd-phone">Phone Number</label>
         <span class="edd-description">
-        	Enter your phone number so we can get in touch with you.
+        	Please input your phone number.
         </span>
         <input class="edd-input" type="text" name="edd_phone" id="edd-phone" placeholder="Phone Number" />
     </p>
@@ -236,12 +239,15 @@ function edd_midtrans_page_content( $content ) {
 	// Check if we're on the success page
 	if (edd_is_success_page()) {
 		if ($_SESSION['pdf']){
+			$sanitized = [];
+			$sanitized['payment-confirmation'] = sanitize_text_field($_GET['payment-confirmation']);
+			$sanitized['pdf'] = sanitize_text_field($_SESSION['pdf']);
     		$message  = '<div class="edd-midtrans">';
     		$message .= '<h3>Payment Instruction</h3>';
-    		$message .= '<p><a href="' . $_SESSION['pdf'] . '" target="_blank">' . $_SESSION['pdf'] . '</a></p>' ;
+    		$message .= '<p><a href="' . $sanitized['pdf'] . '" target="_blank">' . $sanitized['pdf'] . '</a></p>' ;
    			$message .= '</div>';
-			if (has_filter('edd_payment_confirm_' . $_GET['payment-confirmation'])) {
-            	$content = apply_filters('edd_payment_confirm_' . $_GET['payment-confirmation'], $content);
+			if (has_filter('edd_payment_confirm_' . $sanitized['payment-confirmation'])) {
+            	$content = apply_filters('edd_payment_confirm_' . $sanitized['payment-confirmation'], $content);
         	}
         	$_SESSION['pdf'] = "";
 			return $content . $message;

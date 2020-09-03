@@ -44,8 +44,7 @@ The manual installation method involves downloading our feature-rich plugin and 
 1. [Download](../../archive/master.zip) the plugin file to your computer and unzip it
 2. Extract the plugin, then rename the folder modules as **edd-midtrans-gateway**
 3. Using an FTP program, or your hosting control panel, upload the unzipped plugin folder to your WordPress installation `wp-content/plugins/` directory.
-4. Install & Activate the plugin from the Plugins menu within the WordPress admin panel.
-5. Activate **Easy Digital Downloads - Midtrans Gateway** plugin from Plugin menu in your WordPress admin page.
+5. Install & then Activate **Midtrans Payment Gateway for Easy Digital Downloads** plugin from Plugin menu in your WordPress admin page.
 
 #### Midtrans MAP Configuration
 1. Login to your [Midtrans Account](https://dashboard.midtrans.com/), select your environment (sandbox/production), go to menu ***settings > configuration***

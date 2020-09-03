@@ -3,8 +3,8 @@ Contributors: yocki, rizdaprasetya
 Tags: comments, spam
 Tags: midtrans, snap, payment, payment-gateway, credit-card, commerce, e-commerce, edd, easy-digital-downloads
 Requires at least: 3.9.1
-Tested up to: 5.2.0
-Stable tag: 2.2.2s
+Tested up to: 5.5.0
+Stable tag: 2.5.0
 Requires PHP: 5.2.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -98,6 +98,13 @@ The best way please email to support@midtrans.com, but bugs can be reported in o
 = 2.4.0 =
 * Update veritrans lib to midtrans lib.
 * Update the snap redirection.
+
+= 2.5.0 =
+* better compatibility: prevent conflict of function & vars with other plugins
+* updated plugin descriptions
+* input processing improvements
+* performance improvements
+* remove unnecessary files
 
 == Get Help ==
 

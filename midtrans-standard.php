@@ -28,7 +28,9 @@ include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installment.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-installmentoff.php' );
 include_once( EDDMIDTRANS_DIR . 'includes/edd-midtrans-promo.php' );
-require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+if(!class_exists("Midtrans\Config")){
+	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+}
 
 #To add currency Rp and IDR
 #
@@ -44,7 +46,9 @@ add_filter( 'edd_currencies', 'midtrans_gateway_rupiah_currencies');
 // to get notification from veritrans
 function edd_midtrans_notification(){
 	global $edd_options;
-	require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	if(!class_exists("Midtrans\Config")){
+		require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	}
 	if(edd_is_test_mode()){
 		// set Sandbox credentials here
 		\Midtrans\Config::$serverKey = $edd_options['mt_sandbox_server_key'];

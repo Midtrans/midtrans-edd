@@ -146,7 +146,9 @@ add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), 'edd_midtrans_
 // processes the payment-mode
 function edd_midtrans_gateway_payment($purchase_data) {
 	global $edd_options;
-	// require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	if(!class_exists("Midtrans\Config")){
+		require_once plugin_dir_path( __FILE__ ) . '/lib/Midtrans.php';
+	}
 	/**********************************
 	* set transaction mode
 	**********************************/

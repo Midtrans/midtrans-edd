@@ -1,9 +1,9 @@
 <?php
 /*
-Plugin Name: Easy Digital Downloads - Midtrans Gateway
+Plugin Name: Midtrans Payment Gateway for Easy Digital Downloads 
 Plugin URI: https://github.com/Midtrans/midtrans-edd
-Description: Accept all payment directly on your Easy Digital Downloads site in a seamless and secure checkout environment with <a href="https://midtrans.com" target="_blank">Midtrans.com</a>
 Version: 2.4.0
+Description: Accept various payment methods directly on your Easy Digital Downloads site in a seamless and secure checkout environment with <a href="https://midtrans.com" target="_blank">Midtrans.com</a>
 Author: Midtrans
 Author URI: https://midtrans.com
 

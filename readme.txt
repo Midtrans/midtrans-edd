@@ -3,7 +3,7 @@ Contributors: yocki, rizdaprasetya
 Tags: comments, spam
 Tags: midtrans, snap, payment, payment-gateway, credit-card, commerce, e-commerce, edd, easy-digital-downloads
 Requires at least: 3.9.1
-Tested up to: 5.5.0
+Tested up to: 5.7
 Stable tag: 2.5.0
 Requires PHP: 5.2.4
 License: GPLv2 or later

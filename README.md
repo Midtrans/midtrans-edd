@@ -21,6 +21,10 @@ Payment Method Feature:
 * Two-click & One-click feature.
 * Midtrans Snap all payment method fullpayment.
 
+#### Live Demo
+Want to see Midtrans Magento payment plugins in action? We have some demo web-stores for Magento that you can use to try the payment journey directly, click the link below.
+* [Midtrans CMS Demo Store](https://docs.midtrans.com/en/snap/with-plugins?id=midtrans-payment-plugin-live-demonstration)
+
 ### Installation
 
 #### Minimum Requirements
@@ -70,6 +74,7 @@ In order to configure Midtrans plug-in:
 
 #### Get help
 
+* Please follow [this step by step guide](https://docs.midtrans.com/en/snap/with-plugins?id=wordpress-edd-plugin-configuration) for complete configuration. If you have any feedback or request, please [do let us know here](https://docs.midtrans.com/en/snap/with-plugins?id=feedback-and-request).
 * [Midtrans registration](https://dashboard.midtrans.com/register)
 * [Midtrans documentation](http://docs.midtrans.com)
 * [Midtrans SNAP Documentation](http://snap-docs.midtrans.com)

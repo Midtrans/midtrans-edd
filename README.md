@@ -22,7 +22,7 @@ Payment Method Feature:
 * Midtrans Snap all payment method fullpayment.
 
 #### Live Demo
-Want to see Midtrans Magento payment plugins in action? We have some demo web-stores for Magento that you can use to try the payment journey directly, click the link below.
+Want to see Midtrans EDD payment plugins in action? We have some demo web-stores for EDD that you can use to try the payment journey directly, click the link below.
 * [Midtrans CMS Demo Store](https://docs.midtrans.com/en/snap/with-plugins?id=midtrans-payment-plugin-live-demonstration)
 
 ### Installation
